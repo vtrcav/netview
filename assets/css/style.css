@@ -1,0 +1,129 @@
+#app {
+    width: 97%;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-gap: 0.5em;
+  }
+
+  body {
+    background-color: #202123;
+  }
+  a{
+    text-decoration:none;
+  }
+  a:visited{
+    text-decoration:none;
+  }
+  .title-update {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #3E3F4B;
+    color: white;
+    border-radius: 5px;
+    padding: 1em;
+    font-family: 'Roboto', sans-serif;
+  }
+  .title {
+    text-align: left;
+  }
+
+  .update {
+    text-align: right;
+  }
+
+  .card {
+    background-color: #f44336;
+    color: white;
+    border-radius: 5px;
+    padding: 0.5em;
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+  }
+
+  .card.online {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    padding: 0.5em;
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+  }
+  @keyframes blink {
+    from, to {
+      background-color: #f44336;
+    }
+    50% {
+      background-color: #ff6666;
+    }
+  }
+
+  .gray {
+    background-color: #555;
+    color: #fff;
+  }
+  
+
+  .blink {
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  .modal {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background-color: white;
+    width: 350px;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  }
+
+  .sobre-link {
+    color: white;
+    text-decoration: none;
+    font-family: 'Roboto', sans-serif;
+    transition: all 0.2s ease;
+  }
+
+  .sobre-modal {
+    color: #202123;
+    text-decoration: none;
+    text-align: left;
+    font-family: 'Roboto', sans-serif;
+    transition: all 0.2s ease;
+  }
+
+  .sobre-link:hover {
+    text-decoration: underline;
+  }
+
+  .spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  

@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="assets/js/vue.js"></script>
+  <script src="assets/js/axios.min.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/fontawesome-free-6.3.0-web/css/all.min.css" />
+  <link rel="stylesheet" href="assets/bootstrap-4.5.3-dist/css/bootstrap.min.css"
+  integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+J9OqM70yVrj9XuOf7F5/2m81srIXr"
+  crossorigin="anonymous">
+  <link rel="shortcut icon" href="assets/img/favicon.png" type="image/x-icon">
+  <title>NetView</title>
+</head>
+<body>
+  <div id="app">
+    <div style="grid-column: 1 / span 6; text-align: center;">
+      <div class="title-update">
+        <div class="title">
+          <h1>NetView</h1>
+        </div>
+        <div class="update">
+          <p>Última atualização: {{ lastUpdate }}</p>
+          <p><strong>Chave de status</strong><br>
+            <i class="fas fa-check-circle"></i> Em funcionamento<br>
+            <i class="fas fa-clock"></i> Fora de horário<br>
+          <i class="fas fa-circle-xmark"></i> Indisponível</p>
+          <a href="#" class="sobre-link" @click.prevent="showModal = true">Sobre</a>
+        </div>
+      </div>
+    </div>   
+    <div v-if="loading" class="spinner"></div>
+    <div v-else v-for="device in devices" :key="device.ip" style="grid-column: auto;">
+      <a :href="'http://' + device.ip" target="_blank">
+        <div :class="['card', device.status === 'Online' ? 'online' : '', blinkClass(device.status), device.status === 'Fora de horário' ? 'gray' : '']">
+          <div>
+            <h3>
+              <i :class="[
+                'fas',
+                device.status === 'Online' ? 'fa-check-circle' : device.status === 'Fora de horário' ? 'fa-clock' : 'fa-circle-xmark'
+              ]"></i> {{ device.name }}
+            </h3>
+            <p>{{ device.ip }}</p>
+          </div>
+        </div>
+      </a>     
+    </div>    
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <div class="sobre-modal">
+          <h3>NetView</h3>
+          <p>Versão: 1.0.1-beta1</p>
+          <p>NetView é uma aplicação web de monitoramento de dispositivos em rede. Feito com Vue.js, Axios e PHP.</p>
+          <p>Desenvolvido por: <strong>Vitor Cavalcante</strong></p>
+        </div>        
+        <button @click="showModal = false">Fechar</button>
+      </div>
+    </div>    
+  </div>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
