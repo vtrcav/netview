@@ -1,62 +1,186 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NetView - Sistema de Monitoramento de Rede do Hospital Nina Rodrigues">
   <script src="assets/js/vue.js"></script>
-  <script src="assets/js/axios.min.js"></script>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/fontawesome-free-6.3.0-web/css/all.min.css" />
   <link rel="stylesheet" href="assets/bootstrap-4.5.3-dist/css/bootstrap.min.css"
-  integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+J9OqM70yVrj9XuOf7F5/2m81srIXr"
-  crossorigin="anonymous">
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+J9OqM70yVrj9XuOf7F5/2m81srIXr"
+        crossorigin="anonymous">
   <link rel="shortcut icon" href="assets/img/favicon.png" type="image/x-icon">
-  <title>NetView</title>
+  <title>NetView - Hospital Nina Rodrigues</title>
 </head>
 <body>
   <div id="app">
-    <div style="grid-column: 1 / span 6; text-align: center;">
+    <div class="header">
       <div class="title-update">
         <div class="title">
           <h1>NetView</h1>
-        </div>
-        <div class="update">
-          <p>Última atualização: {{ lastUpdate }}</p>
-          <p><strong>Chave de status</strong><br>
-            <i class="fas fa-check-circle"></i> Em funcionamento<br>
-            <i class="fas fa-clock"></i> Fora de horário<br>
-          <i class="fas fa-circle-xmark"></i> Indisponível</p>
-          <a href="#" class="sobre-link" @click.prevent="showModal = true">Sobre</a>
-        </div>
-      </div>
-    </div>   
-    <div v-if="loading" class="spinner"></div>
-    <div v-else v-for="device in devices" :key="device.ip" style="grid-column: auto;">
-      <a :href="'http://' + device.ip" target="_blank">
-        <div :class="['card', device.status === 'Online' ? 'online' : '', blinkClass(device.status), device.status === 'Fora de horário' ? 'gray' : '']">
-          <div>
-            <h3>
-              <i :class="[
-                'fas',
-                device.status === 'Online' ? 'fa-check-circle' : device.status === 'Fora de horário' ? 'fa-clock' : 'fa-circle-xmark'
-              ]"></i> {{ device.name }}
-            </h3>
-            <p>{{ device.ip }}</p>
+          <div class="header-actions">
+            <!-- <button @click="manualUpdate" class="btn btn-sm btn-primary" :disabled="connectionStatus !== 'Conectado'">
+              <i class="fas fa-sync-alt"></i> Atualizar
+            </button>
+            <button @click="openConfig" class="btn btn-sm btn-secondary">
+              <i class="fas fa-cog"></i> Configurações
+            </button> -->
+            <a href="#" class="btn btn-sm btn-secondary" @click.prevent="showModal = true">
+              <i class="fas fa-info-circle"></i> Sobre
+            </a>
           </div>
         </div>
-      </a>     
-    </div>    
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
-        <div class="sobre-modal">
-          <h3>NetView</h3>
-          <p>Versão: 1.0.1-beta1</p>
-          <p>NetView é uma aplicação web de monitoramento de dispositivos em rede. Feito com Vue.js, Axios e PHP.</p>
-          <p>Desenvolvido por: <strong>Vitor Cavalcante</strong></p>
-        </div>        
-        <button @click="showModal = false">Fechar</button>
+        <div class="update-info">
+          <p>
+            <strong>Última atualização:</strong> {{ lastUpdate || 'Aguardando...' }}
+            <span :class="['connection-status', connectionClass]">
+              <i class="fas" :class="{
+                'fa-plug': connectionStatus === 'Conectado',
+                'fa-spinner fa-spin': connectionStatus === 'Conectando...' || connectionStatus.includes('Reconectando'),
+                'fa-exclamation-triangle': connectionStatus === 'Desconectado' || connectionStatus === 'Falha na conexão'
+              }"></i>
+              {{ connectionStatus }}
+            </span>
+          </p>
+          <div class="status-key">
+            <strong>Chave de status:</strong>
+            <span class="status-item"><i class="fas fa-check-circle text-success"></i> Em funcionamento</span>
+            <span class="status-item"><i class="fas fa-clock text-secondary"></i> Fora de horário</span>
+            <span class="status-item"><i class="fas fa-circle-xmark text-danger"></i> Indisponível</span>
+          </div>
+          <div class="stats-summary" v-if="stats && stats.total">
+            <span class="badge badge-success">Online: {{ stats.online || 0 }}</span>
+            <span class="badge badge-danger">Offline: {{ stats.offline || 0 }}</span>
+            <span class="badge badge-secondary">Fora de horário: {{ stats.outOfHours || 0 }}</span>
+            <span class="badge badge-info">Total: {{ stats.total || 0 }}</span>
+          </div>
+        </div>
       </div>
-    </div>    
+      
+      <!-- Filtros -->
+      <div class="filters-container">
+        <div class="filters">
+          <div class="filter-group">
+            <label>Status:</label>
+            <select v-model="filter.status" class="form-control form-control-sm">
+              <option value="all">Todos</option>
+              <option value="Online">Online</option>
+              <option value="Offline">Offline</option>
+              <option value="Fora de horário">Fora de horário</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Categoria:</label>
+            <select v-model="filter.category" class="form-control form-control-sm">
+              <option value="all">Todas</option>
+              <option v-for="category in categories" :value="category">{{ category }}</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Busca:</label>
+            <input type="text" v-model="filter.search" placeholder="Nome ou IP..." class="form-control form-control-sm">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="alert alert-danger" v-if="error">
+      <i class="fas fa-exclamation-triangle"></i> {{ error }}
+    </div>
+    
+    <div v-if="loading" class="spinner-container">
+      <div class="spinner"></div>
+      <p>Estabelecendo conexão com o servidor...</p>
+    </div>
+    
+    <div v-else class="devices-grid">
+      <div v-for="device in filteredDevices" :key="device.ip" class="device-card-container">
+        <a :href="'http://' + device.ip" target="_blank" rel="noopener noreferrer" class="device-link">
+          <div :class="['device-card', device.status === 'Online' ? 'online' : '', 
+                        blinkClass(device.status), 
+                        device.status === 'Fora de horário' ? 'gray' : '']">
+            <div class="device-header">
+              <h3>
+                <i :class="[
+                  'fas',
+                  device.status === 'Online' ? 'fa-check-circle' : 
+                  device.status === 'Fora de horário' ? 'fa-clock' : 'fa-circle-xmark'
+                ]"></i> 
+                {{ device.name }}
+              </h3>
+              <div class="device-category" v-if="device.category">{{ device.category }}</div>
+            </div>
+            <div class="device-details">
+              <p class="device-ip">{{ device.ip }}</p>
+              <!-- <p class="device-ping" v-if="device.responseTime !== null">
+                <i class="fas fa-tachometer-alt"></i> {{ formatResponseTime(device.responseTime) }}
+              </p>
+              <p class="device-timestamp" v-if="device.timestamp">
+                <i class="fas fa-history"></i> {{ new Date(device.timestamp).toLocaleTimeString() }}
+              </p> -->
+            </div>
+          </div>
+        </a>    
+      </div>    
+    </div>
+    
+    <!-- Modal Sobre -->
+    <div v-if="showModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>NetView</h3>
+          <button @click="showModal = false" class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Versão:</strong> 2.0.0</p>
+          <p>NetView é uma aplicação web de monitoramento de dispositivos em rede. Feito com Vue.js e WebSockets para monitoramento em tempo real.</p>
+          <p><strong>Funcionalidades:</strong></p>
+          <ul>
+            <li>Monitoramento em tempo real via ICMP (ping)</li>
+            <li>Comunicação via WebSockets para atualizações instantâneas</li>
+            <li>Detecção de dispositivos online/offline</li>
+            <li>Suporte a dispositivos com horário de funcionamento específico</li>
+            <li>Notificações de dispositivos offline</li>
+          </ul>
+          <p>Desenvolvido por: <strong>Vitor Cavalcante</strong></p>
+          <p>Para: Hospital Nina Rodrigues/MA</p>
+        </div>
+        <div class="modal-footer">
+          <button @click="showModal = false" class="btn btn-primary">Fechar</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal Configurações -->
+    <div v-if="showConfigModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Configurações</h3>
+          <button @click="showConfigModal = false" class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Intervalo de Atualização (segundos)</label>
+            <input type="number" v-model.number="config.updateInterval" min="1" max="300" class="form-control">
+            <small class="form-text text-muted">Frequência mínima de 1s para monitoramento em tempo real</small>
+          </div>
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="notificationsSwitch" v-model="config.showNotifications">
+              <label class="custom-control-label" for="notificationsSwitch">Mostrar notificações do navegador</label>
+            </div>
+            <small class="form-text text-muted">Receba alertas quando dispositivos ficarem offline</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="showConfigModal = false" class="btn btn-secondary">Cancelar</button>
+          <button @click="saveUserConfig" class="btn btn-primary">Salvar</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script src="assets/js/app.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
