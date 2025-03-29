@@ -3,7 +3,7 @@
         "ip": "172.17.29.1",
         "24h": true,
         "category": "Roteadores",
-        "description": "Roteador principal MikroTik",
+        "description": "Roteador MikroTik",
         "icon": "router",
         "pingCount": 3,
         "pingTimeout": 2000
@@ -21,7 +21,7 @@
         "ip": "172.17.29.3",
         "24h": true,
         "category": "Servidores",
-        "description": "Servidor Active Directory",
+        "description": "Servidor AD",
         "icon": "server",
         "pingCount": 3,
         "pingTimeout": 2000
@@ -57,7 +57,7 @@
         "ip": "172.17.29.200",
         "24h": true,
         "category": "Sistemas",
-        "description": "Sistema de Ponto Eletrônico",
+        "description": "Sistema de Ponto",
         "icon": "clock",
         "pingCount": 3,
         "pingTimeout": 2000
@@ -292,7 +292,7 @@
         "ip": "172.17.29.27",
         "24h": true,
         "category": "Impressoras",
-        "description": "Impressora Postos",
+        "description": "Impressora Posto",
         "icon": "printer",
         "responseThreshold": 150,
         "ports": [9100, 80]
@@ -301,7 +301,7 @@
         "ip": "172.17.29.80",
         "24h": true,
         "category": "Impressoras",
-        "description": "Impressora Corredores",
+        "description": "Impressora Coreme",
         "icon": "printer",
         "responseThreshold": 150,
         "ports": [9100, 80]
@@ -423,7 +423,7 @@
         "ip": "172.17.29.19",
         "24h": true,
         "category": "Roteadores",
-        "description": "Roteador Diretoria",
+        "description": "Roteador Direção",
         "icon": "router",
         "pingCount": 2,
         "responseThreshold": 50
