@@ -20,7 +20,7 @@ class NetViewServer {
         this.deviceConfig = {};
         this.lastCheck = null;
         this.configLastModified = 0;
-        this.configFile = path.join(__dirname, '/src/assets/js/config/devices.json');
+        this.configFile = path.join(__dirname, '/config/devices.json');
         this.timers = {};
         this.pingTasks = new Map(); // Rastreia as tarefas de ping em andamento
         this.retryCount = 4; // Número de tentativas de ping para confirmar status
