@@ -1,14 +1,14 @@
-# NetView - Sistema de Monitoramento de Rede
+# NetView - Sistema simples de monitoramento de rede
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)
 
-## 📋 Sobre o Projeto
+## 📋 Sobre 
 
 **NetView** é um sistema de monitoramento de rede em tempo real que combina verificação automatizada de dispositivos via ping, notificações por WhatsApp e interface web responsiva. 
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tecnologias utilizadas
 
 - **Node.js** 
 - **WebSocket (ws)** 
@@ -103,7 +103,7 @@ node netview_server.js [porta] [host]
 }
 ```
 
-### Parâmetros de Inicialização
+### Parâmetros de inicialização
 
 ```bash
 node server.js [porta] [host]
@@ -130,7 +130,7 @@ O sistema envia automaticamente:
 - ✅ **Confirmações de online**: quando um dispositivo volta a funcionar
 - 📊 **Relatórios de tempo**: duração dos períodos offline
 
-### API WebSocket
+### API webSocket
 
 O servidor expõe uma API WebSocket para integração:
 
@@ -163,7 +163,7 @@ ws.send(JSON.stringify({
 
 ## 🔧 Personalização
 
-### Intervalos de Verificação
+### Intervalos de verificação
 
 No código principal, você pode ajustar:
 
@@ -174,14 +174,14 @@ this.retryCount = 4;            // Tentativas de ping por dispositivo
 this.concurrentPings = 10;      // Pings simultâneos máximos
 ```
 
-### Configuração de Notificações
+### Configuração de notificações
 
 ```javascript
 this.INITIAL_SCAN_DELAY = 60 * 1000;              // Delay inicial após startup
 this.OFFLINE_THRESHOLD = 15 * 1000;               // Tempo para considerar offline
 ```
 
-### ID do Grupo WhatsApp
+### ID do grupo WhatsApp
 
 Para alterar o grupo que recebe as notificações, modifique:
 
@@ -193,7 +193,7 @@ this.notificationGroupId = 'SEU_ID_DO_GRUPO@g.us';
 1. Execute o servidor sem estar logado, faça a autenticação e depois execute o achagrupo.js
 2. Observe o ID do grupo que você quer usar
 
-## 📊 Monitoramento e Logs
+## 📊 Monitoramento e logs
 
 O sistema gera logs detalhados para monitoramento:
 
@@ -205,7 +205,7 @@ O sistema gera logs detalhados para monitoramento:
 [INFO] Status do dispositivo Servidor-Principal: Online (mudou: false)
 ```
 
-## 🐛 Solução de Problemas
+## 🐛 Solução de problemas
 
 ### WhatsApp não conecta
 ```bash
