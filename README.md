@@ -6,7 +6,7 @@
 
 ## 📋 Sobre 
 
-**NetView** é um sistema de monitoramento de rede em tempo real que combina verificação automatizada de dispositivos via ping, notificações por WhatsApp e interface web responsiva. 
+**NetView** é um sistema simples de monitoramento de rede em tempo real que combina verificação automatizada de dispositivos via ping, notificações por WhatsApp e interface web responsiva. 
 
 ## 🛠️ Tecnologias utilizadas
 
