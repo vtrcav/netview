@@ -34,11 +34,11 @@ class NetViewServer {
         this.OFFLINE_THRESHOLD = 15 * 1000;   // 15 segundos para considerar dispositivo offline
 
         // ID do grupo NTI para notificações
-        this.notificationGroupId = '120363417881631672@g.us';
+        this.notificationGroupId = '559888956111-1535985891@g.us';
 
         // Configurações de log
         console.log(`Caminho do arquivo de configuração: ${this.configFile}`);
-        
+
         // WhatsApp Web Client Initialization
         this.whatsappClient = new Client({
             authStrategy: new LocalAuth(),
@@ -50,30 +50,30 @@ class NetViewServer {
 
         // Configuração dos eventos do WhatsApp
         this.setupWhatsAppClient();
-        
+
         // Carregamento de configurações e verificações iniciais
         this.loadDeviceConfig();
         this.checkAllDevices();
         this.setupTimers();
-        
+
         console.log("Servidor NetView inicializado");
     }
-    
+
     setupWhatsAppClient() {
         this.whatsappClient.on('qr', (qr) => {
             console.log('Código QR do WhatsApp recebido. Escaneie com o WhatsApp Mobile:');
             qrcode.generate(qr, {small: true});
         });
-    
+
         this.whatsappClient.on('ready', () => {
             console.log('Cliente WhatsApp está pronto!');
             this.sendInitialStartupMessage();
         });
-    
+
         this.whatsappClient.on('authenticated', () => {
             console.log('Cliente WhatsApp autenticado com sucesso');
         });
-    
+
         this.whatsappClient.on('auth_failure', (msg) => {
             console.error('Falha na autenticação do WhatsApp:', msg);
             // Tente reinicializar
@@ -81,13 +81,13 @@ class NetViewServer {
                 console.error('Erro na reinicialização:', error);
             });
         });
-    
+
         this.whatsappClient.on('disconnected', (reason) => {
             console.log('Cliente WhatsApp desconectado:', reason);
             // Tente reconectar
             this.setupWhatsAppClient();
         });
-    
+
         // Adicione tratamento de erro global
         this.whatsappClient.initialize().catch(error => {
             console.error('Erro crítico na inicialização do WhatsApp:', error);
@@ -97,40 +97,40 @@ class NetViewServer {
 
     async sendInitialStartupMessage() {
         try {
-            const message = `🖥️ *NetView - Sistema de monitoramento* 🖥️\n\n` +
-                            `Servidor iniciado e monitoramento ativo.\n` +
-                            `Notificações de dispositivos offline serão enviadas automaticamente.`;
-            
+            const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+            const message = `🖥️ *NetView* 🖥️\n\n` +
+                            `Iniciado e monitoramento ativo.\n` +
+                            `Notificarei aqui quando detectar dispositivos offline =D`;
+
             await this.whatsappClient.sendMessage(this.notificationGroupId, message);
         } catch (error) {
             console.error('Erro ao enviar mensagem de inicialização:', error);
         }
     }
-    
-    // Método para enviar notificação de dispositivo offline
+
     async sendOfflineNotification(device) {
         const now = Date.now();
 
         // Verifica se o servidor está em período inicial de varredura
         if (now - this.serverStartTime < this.INITIAL_SCAN_DELAY) {
-            //console.log(`Suprimindo notificação durante varredura inicial: ${device.name}`);
             return;
         }
-        
+
         const deviceKey = device.name || device.ip;
-        
+
         // Inicializa o registro do dispositivo se não existir
         if (!this.offlineNotifications[deviceKey]) {
             this.offlineNotifications[deviceKey] = {
-                lastNotificationTime: 0,
-                consecutiveOfflineCount: 0
+                notificationSent: false,
+                firstOfflineTime: now
             };
         }
 
         // Registra histórico de offline
         if (!this.deviceOfflineHistory[deviceKey]) {
             this.deviceOfflineHistory[deviceKey] = {
-                firstOfflineDetectionTime: now,
+                firstOfflineTime: now,
                 wasOnlineBefore: true
             };
         }
@@ -138,84 +138,85 @@ class NetViewServer {
         const deviceNotification = this.offlineNotifications[deviceKey];
         const offlineHistory = this.deviceOfflineHistory[deviceKey];
 
-        const timeOffline = now - offlineHistory.firstOfflineDetectionTime;
-            if (timeOffline < this.OFFLINE_THRESHOLD) {
-                console.log(`Dispositivo ${deviceKey} ainda não atingiu threshold de offline`);
-                return;
-            }
+        const timeOffline = now - offlineHistory.firstOfflineTime;
+        if (timeOffline < this.OFFLINE_THRESHOLD) {
+            console.log(`Dispositivo ${deviceKey} ainda não atingiu threshold de offline`);
+            return;
+        }
 
-        // Atualiza primeira vez offline
+        // Atualiza primeira vez offline apenas se estava online antes
         if (offlineHistory.wasOnlineBefore) {
             offlineHistory.firstOfflineTime = now;
             offlineHistory.wasOnlineBefore = false;
         }
 
-        // Verifica condições para enviar notificação
-        const timeSinceLastNotification = now - deviceNotification.lastNotificationTime;
-        const canSendNotification = 
-            timeSinceLastNotification > this.NOTIFICATION_COOLDOWN &&
-            deviceNotification.consecutiveOfflineCount < this.MAX_CONSECUTIVE_OFFLINE_ALERTS;
-
-        if (canSendNotification) {
+        // Envia notificação apenas uma vez por período offline
+        if (!deviceNotification.notificationSent) {
             try {
-                const offlineDuration = this.formatDuration(now - offlineHistory.firstOfflineTime);
-                
+                const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
                 const message = `⚠️ *DISPOSITIVO OFFLINE* ⚠️\n\n` +
-                                `*Nome:* ${device.name}\n` +
-                                `*IP:* ${device.ip}\n` +
-                                `*Descrição:* ${device.description || 'Sem descrição'}\n` +
-                                `*Timestamp:* ${device.timestamp}\n` +
-                                `*Alertas consecutivos:* ${deviceNotification.consecutiveOfflineCount + 1}\n`;
+                              `*Nome:* ${device.name}\n` +
+                              `*IP:* ${device.ip}\n` +
+                              `*Descrição:* ${device.description || 'Sem descrição'}\n` +
+                              `*Timestamp:* ${device.timestamp}\n`;
 
                 await this.whatsappClient.sendMessage(this.notificationGroupId, message);
 
-                // Atualiza registro de notificações
-                deviceNotification.lastNotificationTime = now;
-                deviceNotification.consecutiveOfflineCount++;
+                // Marca que a notificação já foi enviada
+                deviceNotification.notificationSent = true;
+                deviceNotification.firstOfflineTime = now;
 
                 console.log(`Notificação de offline enviada para dispositivo: ${deviceKey}`);
             } catch (error) {
                 console.error('Erro ao enviar notificação de offline:', error);
             }
-        } else {
-            //console.log(`Notificação de offline suprimida para ${deviceKey}`);
         }
     }
 
     async sendOnlineNotification(device) {
         const deviceKey = device.name || device.ip;
         const offlineHistory = this.deviceOfflineHistory[deviceKey];
+        const deviceNotification = this.offlineNotifications[deviceKey];
 
-        if (this.deviceOfflineHistory[deviceKey]) {
-            delete this.deviceOfflineHistory[deviceKey];
-        }
-
-        // Só notifica se o dispositivo estava offline
-        if (offlineHistory && !offlineHistory.wasOnlineBefore) {
+        // Só notifica se o dispositivo estava offline E uma notificação de offline foi enviada
+        if (offlineHistory && !offlineHistory.wasOnlineBefore &&
+            deviceNotification && deviceNotification.notificationSent) {
             try {
+                const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+                // Calcular o tempo que ficou offline
                 const offlineDuration = this.formatDuration(Date.now() - offlineHistory.firstOfflineTime);
-                
+
                 const message = `✅ *DISPOSITIVO ONLINE* ✅\n\n` +
-                                `*Nome:* ${device.name}\n` +
-                                `*IP:* ${device.ip}\n` +
-                                `*Descrição:* ${device.description || 'Sem descrição'}\n` +
-                                `*Timestamp:* ${device.timestamp}\n` +
-                                `*Tempo offline:* ${offlineDuration}`;
+                              `*Nome:* ${device.name}\n` +
+                              `*IP:* ${device.ip}\n` +
+                              `*Descrição:* ${device.description || 'Sem descrição'}\n` +
+                              `*Timestamp:* ${device.timestamp}\n` +
+                              `*Tempo offline:* ${offlineDuration}`;
 
                 await this.whatsappClient.sendMessage(this.notificationGroupId, message);
 
                 console.log(`Notificação de online enviada para dispositivo: ${deviceKey}`);
 
-                // Reseta o histórico
-                offlineHistory.wasOnlineBefore = true;
-                offlineHistory.firstOfflineTime = 0;
-
-                // Reseta contadores de notificação offline
+                // Reseta o controle para permitir nova notificação no futuro
                 if (this.offlineNotifications[deviceKey]) {
-                    this.offlineNotifications[deviceKey].consecutiveOfflineCount = 0;
+                    this.offlineNotifications[deviceKey].notificationSent = false;
+                }
+
+                // Remove do histórico de offline
+                if (this.deviceOfflineHistory[deviceKey]) {
+                    delete this.deviceOfflineHistory[deviceKey];
                 }
             } catch (error) {
                 console.error('Erro ao enviar notificação de online:', error);
+            }
+        } else if (offlineHistory) {
+            // Se o dispositivo estava offline mas ainda não tínhamos enviado alerta
+            // apenas limpa o histórico sem enviar notificação
+            delete this.deviceOfflineHistory[deviceKey];
+
+            if (this.offlineNotifications[deviceKey]) {
+                this.offlineNotifications[deviceKey].notificationSent = false;
             }
         }
     }
@@ -223,8 +224,11 @@ class NetViewServer {
     // Método opcional para resetar contadores de notificações
     resetOfflineNotificationTracking(deviceKey) {
         if (this.offlineNotifications[deviceKey]) {
-            this.offlineNotifications[deviceKey].consecutiveOfflineCount = 0;
-            this.offlineNotifications[deviceKey].lastNotificationTime = 0;
+            this.offlineNotifications[deviceKey].notificationSent = false;
+        }
+
+        if (this.deviceOfflineHistory[deviceKey]) {
+            delete this.deviceOfflineHistory[deviceKey];
         }
     }
 
@@ -239,7 +243,7 @@ class NetViewServer {
         if (minutes > 0) return `${minutes} minuto(s)`;
         return `${seconds} segundo(s)`;
     }
-        
+
     loadDeviceConfig() {
         if (fs.existsSync(this.configFile)) {
             try {
@@ -255,22 +259,22 @@ class NetViewServer {
             this.deviceConfig = {};
         }
     }
-    
+
     checkConfigUpdates() {
         if (fs.existsSync(this.configFile)) {
             const currentMTime = fs.statSync(this.configFile).mtimeMs;
-            
+
             if (currentMTime > this.configLastModified) {
                 console.log("Detectada alteração no arquivo de configuração. Recarregando...");
                 this.configLastModified = currentMTime;
                 this.loadDeviceConfig();
-                
+
                 const notification = JSON.stringify({
                     type: 'config_updated',
-                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                    timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' }).replace(',', ''),
                     message: 'Configuração de dispositivos atualizada'
                 });
-                
+
                 for (const client of this.clients) {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(notification);
@@ -279,55 +283,55 @@ class NetViewServer {
             }
         }
     }
-    
+
     setupTimers() {
         console.log("Configurando timers...");
-        
+
         // Limpar timers existentes
         for (const key in this.timers) {
             clearInterval(this.timers[key]);
         }
         this.timers = {};
-        
+
         // Timer para verificar atualizações no arquivo de configuração
         this.timers['config'] = setInterval(() => {
             this.checkConfigUpdates();
         }, this.configWatchInterval * 1000);
-        
+
         // Timer para verificar o status dos dispositivos
         this.timers['devices'] = setInterval(() => {
             //console.log("Iniciando verificação periódica dos dispositivos...");
             this.checkAllDevices();
         }, this.pingInterval * 1000);
-        
+
         console.log(`Timers configurados - Ping: ${this.pingInterval}s, Config Watch: ${this.configWatchInterval}s`);
     }
-    
+
     handleConnection(ws, req) {
         this.clients.add(ws);
         console.log(`Nova conexão! (${req.socket.remoteAddress})`);
-        
+
         this.sendInitialStates(ws);
-        
+
         ws.on('message', (message) => {
             this.handleMessage(ws, message);
         });
-        
+
         ws.on('close', () => {
             this.clients.delete(ws);
             console.log(`Conexão ${req.socket.remoteAddress} foi desconectada`);
         });
-        
+
         ws.on('error', (error) => {
             console.log(`Erro: ${error.message}`);
             this.clients.delete(ws);
         });
     }
-    
+
     handleMessage(ws, message) {
         try {
             const data = JSON.parse(message);
-            
+
             if (data.type) {
                 switch (data.type) {
                     case 'manual_check':
@@ -347,7 +351,7 @@ class NetViewServer {
                         const configData = JSON.stringify({
                             type: 'config_data',
                             config: this.deviceConfig,
-                            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                            timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' }).replace(',', ''),
                         });
                         ws.send(configData);
                         break;
@@ -371,21 +375,21 @@ class NetViewServer {
             }));
         }
     }
-    
+
     async checkAllDevices() {
         //console.log("Iniciando verificação de todos os dispositivos de forma assíncrona...");
-        
+
         // Cria um array de promessas para verificação de todos os dispositivos
         const checkPromises = Object.entries(this.deviceConfig).map(
             ([name, info]) => this.checkDevice(name, info, false)
         );
-        
+
         // Executa todas as verificações em paralelo, limitando concorrência
         await this.runWithConcurrencyLimit(checkPromises, this.concurrentPings);
-        
+
         console.log("Verificação de todos os dispositivos concluída");
     }
-    
+
     // Executa promessas com limite de concorrência
     async runWithConcurrencyLimit(promiseFunctions, limit) {
         // Separa em lotes para não exceder o limite de concorrência
@@ -393,13 +397,13 @@ class NetViewServer {
         for (let i = 0; i < promiseFunctions.length; i += limit) {
             batches.push(promiseFunctions.slice(i, i + limit));
         }
-        
+
         // Executa os lotes sequencialmente, mas com promessas concorrentes dentro de cada lote
         for (const batch of batches) {
             await Promise.all(batch);
         }
     }
-    
+
     async checkDevice(name, deviceInfo, isPriority = false) {
         // Se já houver uma verificação em andamento para este dispositivo, cancela a menos que seja prioritária
         if (this.pingTasks.has(name)) {
@@ -407,13 +411,13 @@ class NetViewServer {
                 return; // Ignora verificações não prioritárias duplicadas
             }
         }
-        
+
         // Define uma Promise que será resolvida quando a verificação for concluída
         const checkPromise = this._checkDeviceInternal(name, deviceInfo);
-        
+
         // Registra a tarefa
         this.pingTasks.set(name, checkPromise);
-        
+
         try {
             await checkPromise;
         } catch (error) {
@@ -423,10 +427,10 @@ class NetViewServer {
             this.pingTasks.delete(name);
         }
     }
-    
+
     async _checkDeviceInternal(name, deviceInfo) {
-        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        
+        const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
         const result = {
             name: name,
             ip: deviceInfo.ip,
@@ -435,35 +439,35 @@ class NetViewServer {
             icon: deviceInfo.icon || 'device',
             timestamp: timestamp
         };
-        
+
         const currentHour = new Date().getHours();
         const isWeekday = [1, 2, 3, 4, 5].includes(new Date().getDay() === 0 ? 7 : new Date().getDay()); // Ajustando domingo
         let isWorkingHours = true;
-        
+
         if (deviceInfo.workingHours) {
             const workingHours = deviceInfo.workingHours;
             isWorkingHours = false;
-            
+
             if (workingHours.weekday && isWeekday) {
                 const start = workingHours.weekday.start || 7;
                 const end = workingHours.weekday.end || 18;
                 isWorkingHours = (currentHour >= start && currentHour < end);
             }
-            
+
             if (!isWorkingHours && workingHours.weekend && !isWeekday) {
                 const start = workingHours.weekend.start || 9;
                 const end = workingHours.weekend.end || 16;
                 isWorkingHours = (currentHour >= start && currentHour < end);
             }
         }
-        
+
         if (!isWorkingHours && !(deviceInfo['24h'])) {
             result.status = 'Fora de horário';
             result.responseTime = null;
             this.updateDeviceState(name, result);
             return;
         }
-        
+
         try {
             const pingResult = await this.pingWithRetry(deviceInfo.ip, this.retryCount);
             result.status = pingResult.success ? 'Online' : 'Offline';
@@ -473,14 +477,14 @@ class NetViewServer {
             result.status = 'Offline';
             result.responseTime = null;
         }
-        
+
         this.updateDeviceState(name, result);
     }
-    
+
     async pingWithRetry(ip, retryCount = 2) {
         let successCount = 0;
         let lastResponseTime = null;
-        
+
         for (let attempt = 0; attempt < retryCount; attempt++) {
             try {
                 const result = await this.executePing(ip);
@@ -492,21 +496,21 @@ class NetViewServer {
                 console.error(`Erro no ping para ${ip} (tentativa ${attempt + 1}): ${error.message}`);
             }
         }
-        
+
         // Se pelo menos dois pings foram bem-sucedidos, consideramos o dispositivo online
         return {
             success: successCount > (retryCount / 2), // Exigir maioria (>50%) em vez de apenas um
             responseTime: lastResponseTime
         };
     }
-    
+
     async executePing(ip) {
         const escapedIP = ip.replace(/"/g, '\\"');
         const count = 1; // Apenas 1 pacote por tentativa
         const timeout = 2000; // Timeout de 2s
-        
+
         let command, pattern;
-        
+
         if (os.platform() === 'win32') {
             command = `ping -n ${count} -w ${timeout} ${escapedIP}`;
             // Padrão mais flexível para Windows
@@ -517,13 +521,13 @@ class NetViewServer {
             // Padrão mais flexível para Linux/macOS
             pattern = /(?:min\/avg\/max\/(?:stddev|mdev)|rtt min\/avg\/max\/mdev) = ([0-9.]+)\/([0-9.]+)\/([0-9.]+)\/([0-9.]+)/;
         }
-        
+
         try {
             const { stdout } = await execPromise(command);
             //console.log(`Saída ping para ${ip}:`, stdout);
-            
+
             let responseTime = null;
-            
+
             if (os.platform() === 'win32') {
                 const matches = stdout.match(pattern);
                 if (matches && matches[1]) {
@@ -560,7 +564,7 @@ class NetViewServer {
                     }
                 }
             }
-            
+
             return {
                 success: true,
                 responseTime: responseTime
@@ -573,10 +577,11 @@ class NetViewServer {
             };
         }
     }
-    
+
     updateDeviceState(name, result) {
+        result.timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         //console.log(`Verificação concluída para ${name}: Status = ${result.status}`);
-        
+
         // Verificar se o dispositivo está offline e deve enviar notificação
         if (result.status === 'Offline') {
             this.sendOfflineNotification(result);
@@ -590,11 +595,11 @@ class NetViewServer {
         if (!this.deviceStates[category]) {
             this.deviceStates[category] = [];
         }
-        
+
         const previousState = this.getDevicePreviousState(name, category);
         let updated = false;
         let statusChanged = false;
-        
+
         this.deviceStates[category] = this.deviceStates[category].map(device => {
             if (device.name === name) {
                 updated = true;
@@ -603,12 +608,12 @@ class NetViewServer {
             }
             return device;
         });
-        
+
         if (!updated) {
             this.deviceStates[category].push(result);
             statusChanged = true; // Primeiro status = mudança
         }
-        
+
         // Apenas enviar atualizações quando o status muda (Online -> Offline ou Offline -> Online)
         if (statusChanged) {
             const update = JSON.stringify({
@@ -616,14 +621,14 @@ class NetViewServer {
                 device: result,
                 timestamp: result.timestamp
             });
-            
+
             for (const client of this.clients) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(update);
                     console.log(`Enviando atualização para cliente: ${name} -> ${result.status}`);
                 }
             }
-            
+
             if (previousState) {
                 const stateChange = JSON.stringify({
                     type: 'state_change',
@@ -632,19 +637,19 @@ class NetViewServer {
                     current: result.status,
                     timestamp: result.timestamp
                 });
-                
+
                 for (const client of this.clients) {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(stateChange);
                     }
                 }
             }
-            
+
             // Enviar estatísticas atualizadas para todos os clientes
             this.sendStatsToAll();
         }
     }
-    
+
     sendStatsToAll() {
         for (const client of this.clients) {
             if (client.readyState === WebSocket.OPEN) {
@@ -652,10 +657,10 @@ class NetViewServer {
             }
         }
     }
-    
+
     sendStats(ws) {
         const results = this.getAllDevices();
-        
+
         const stats = {
             total: results.length,
             online: results.filter(item => item.status === 'Online').length,
@@ -663,32 +668,32 @@ class NetViewServer {
             outOfHours: results.filter(item => item.status === 'Fora de horário').length,
             checkDuration: 'Real-time'
         };
-        
+
         const response = {
             type: 'stats_update',
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+            timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
             stats: stats
         };
-        
+
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(response));
         }
     }
-    
+
     getAllDevices() {
         let results = [];
-        
+
         for (const category in this.deviceStates) {
             results = results.concat(this.deviceStates[category]);
         }
-        
+
         return results;
     }
-    
+
     sendInitialStates(ws) {
         const groupedResults = this.deviceStates;
         let results = this.getAllDevices();
-        
+
         const stats = {
             total: results.length,
             online: results.filter(item => item.status === 'Online').length,
@@ -696,22 +701,22 @@ class NetViewServer {
             outOfHours: results.filter(item => item.status === 'Fora de horário').length,
             checkDuration: 'Real-time'
         };
-        
+
         const response = {
             type: 'status_update',
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+            timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
             groups: groupedResults,
             stats: stats
         };
-        
+
         this.lastCheck = response;
-        
+
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(response));
             console.log(`Estado inicial enviado para cliente: ${JSON.stringify(stats)}`);
         }
     }
-    
+
     getDevicePreviousState(deviceName, category) {
         if (this.deviceStates[category]) {
             return this.deviceStates[category].find(device => device.name === deviceName) || null;
