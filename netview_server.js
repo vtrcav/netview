@@ -34,7 +34,7 @@ class NetViewServer {
         this.OFFLINE_THRESHOLD = 15 * 1000;   // 15 segundos para considerar dispositivo offline
 
         // ID do grupo NTI para notificações
-        this.notificationGroupId = '559888956111-1535985891@g.us';
+        this.notificationGroupId = '120363402996376359@g.us';
 
         // Configurações de log
         console.log(`Caminho do arquivo de configuração: ${this.configFile}`);
@@ -110,127 +110,128 @@ class NetViewServer {
     }
 
     async sendOfflineNotification(device) {
-        const now = Date.now();
+    const now = Date.now();
+    const deviceKey = device.name || device.ip;
 
-        // Verifica se o servidor está em período inicial de varredura
-        if (now - this.serverStartTime < this.INITIAL_SCAN_DELAY) {
-            return;
-        }
-
-        const deviceKey = device.name || device.ip;
-
-        // Inicializa o registro do dispositivo se não existir
-        if (!this.offlineNotifications[deviceKey]) {
-            this.offlineNotifications[deviceKey] = {
-                notificationSent: false,
-                firstOfflineTime: now
-            };
-        }
-
-        // Registra histórico de offline
-        if (!this.deviceOfflineHistory[deviceKey]) {
-            this.deviceOfflineHistory[deviceKey] = {
-                firstOfflineTime: now,
-                wasOnlineBefore: true
-            };
-        }
-
-        const deviceNotification = this.offlineNotifications[deviceKey];
-        const offlineHistory = this.deviceOfflineHistory[deviceKey];
-
-        const timeOffline = now - offlineHistory.firstOfflineTime;
-        if (timeOffline < this.OFFLINE_THRESHOLD) {
-            console.log(`Dispositivo ${deviceKey} ainda não atingiu threshold de offline`);
-            return;
-        }
-
-        // Atualiza primeira vez offline apenas se estava online antes
-        if (offlineHistory.wasOnlineBefore) {
-            offlineHistory.firstOfflineTime = now;
-            offlineHistory.wasOnlineBefore = false;
-        }
-
-        // Envia notificação apenas uma vez por período offline
-        if (!deviceNotification.notificationSent) {
-            try {
-                const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-                const message = `⚠️ *DISPOSITIVO OFFLINE* ⚠️\n\n` +
-                              `*Nome:* ${device.name}\n` +
-                              `*IP:* ${device.ip}\n` +
-                              `*Descrição:* ${device.description || 'Sem descrição'}\n` +
-                              `*Timestamp:* ${device.timestamp}\n`;
-
-                await this.whatsappClient.sendMessage(this.notificationGroupId, message);
-
-                // Marca que a notificação já foi enviada
-                deviceNotification.notificationSent = true;
-                deviceNotification.firstOfflineTime = now;
-
-                console.log(`Notificação de offline enviada para dispositivo: ${deviceKey}`);
-            } catch (error) {
-                console.error('Erro ao enviar notificação de offline:', error);
-            }
-        }
+    // Verifica se o servidor está em período inicial de varredura
+    if (now - this.serverStartTime < this.INITIAL_SCAN_DELAY) {
+        console.log(`Dispositivo ${deviceKey} - Ignorando notificação durante período inicial`);
+        return;
     }
 
-    async sendOnlineNotification(device) {
-        const deviceKey = device.name || device.ip;
-        const offlineHistory = this.deviceOfflineHistory[deviceKey];
-        const deviceNotification = this.offlineNotifications[deviceKey];
+    // Inicializa o registro do dispositivo se não existir
+    if (!this.offlineNotifications[deviceKey]) {
+        this.offlineNotifications[deviceKey] = {
+            notificationSent: false,
+            firstOfflineTime: now,
+            lastOfflineCheck: now
+        };
+    }
 
-        // Só notifica se o dispositivo estava offline E uma notificação de offline foi enviada
-        if (offlineHistory && !offlineHistory.wasOnlineBefore &&
-            deviceNotification && deviceNotification.notificationSent) {
+    // Inicializa histórico de offline
+    if (!this.deviceOfflineHistory[deviceKey]) {
+        this.deviceOfflineHistory[deviceKey] = {
+            firstOfflineTime: now,
+            wasOnlineBefore: true,
+            isCurrentlyOffline: true
+        };
+    }
+
+    const deviceNotification = this.offlineNotifications[deviceKey];
+    const offlineHistory = this.deviceOfflineHistory[deviceKey];
+
+    // Atualiza o timestamp da última verificação offline
+    deviceNotification.lastOfflineCheck = now;
+    
+    // Se o dispositivo não estava offline antes, marca como primeira vez offline
+    if (offlineHistory.wasOnlineBefore) {
+        offlineHistory.firstOfflineTime = now;
+        offlineHistory.wasOnlineBefore = false;
+        offlineHistory.isCurrentlyOffline = true;
+        console.log(`Dispositivo ${deviceKey} - Primeira detecção de offline`);
+    }
+
+    // Verifica se atingiu o threshold de tempo offline
+    const timeOffline = now - offlineHistory.firstOfflineTime;
+    if (timeOffline < this.OFFLINE_THRESHOLD) {
+        console.log(`Dispositivo ${deviceKey} - Ainda não atingiu threshold (${timeOffline}ms < ${this.OFFLINE_THRESHOLD}ms)`);
+        return;
+    }
+
+    // Envia notificação apenas se ainda não foi enviada E o dispositivo realmente está offline há tempo suficiente
+    if (!deviceNotification.notificationSent && offlineHistory.isCurrentlyOffline) {
+        try {
+            const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const message = `⚠️ *DISPOSITIVO OFFLINE* ⚠️\n\n` +
+                          `*Nome:* ${device.name}\n` +
+                          `*IP:* ${device.ip}\n` +
+                          `*Descrição:* ${device.description || 'Sem descrição'}\n` +
+                          `*Timestamp:* ${timestamp}\n`;
+
+            await this.whatsappClient.sendMessage(this.notificationGroupId, message);
+
+            // Marca que a notificação foi enviada
+            deviceNotification.notificationSent = true;
+            deviceNotification.notificationSentTime = now;
+
+            console.log(`✅ Notificação de offline enviada para dispositivo: ${deviceKey}`);
+        } catch (error) {
+            console.error(`❌ Erro ao enviar notificação de offline para ${deviceKey}:`, error);
+        }
+    } else if (deviceNotification.notificationSent) {
+        console.log(`Dispositivo ${deviceKey} - Notificação já enviada, ignorando`);
+    }
+}
+
+    async sendOnlineNotification(device) {
+    const deviceKey = device.name || device.ip;
+    const offlineHistory = this.deviceOfflineHistory[deviceKey];
+    const deviceNotification = this.offlineNotifications[deviceKey];
+
+    console.log(`Dispositivo ${deviceKey} - Verificando necessidade de notificação de online`);
+
+    // Só processa se o dispositivo estava realmente offline antes
+    if (offlineHistory && !offlineHistory.wasOnlineBefore && offlineHistory.isCurrentlyOffline) {
+        // Só envia notificação de online se uma notificação de offline foi enviada
+        if (deviceNotification && deviceNotification.notificationSent) {
             try {
                 const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-
-                // Calcular o tempo que ficou offline
                 const offlineDuration = this.formatDuration(Date.now() - offlineHistory.firstOfflineTime);
 
                 const message = `✅ *DISPOSITIVO ONLINE* ✅\n\n` +
                               `*Nome:* ${device.name}\n` +
                               `*IP:* ${device.ip}\n` +
                               `*Descrição:* ${device.description || 'Sem descrição'}\n` +
-                              `*Timestamp:* ${device.timestamp}\n` +
+                              `*Timestamp:* ${timestamp}\n` +
                               `*Tempo offline:* ${offlineDuration}`;
 
                 await this.whatsappClient.sendMessage(this.notificationGroupId, message);
 
-                console.log(`Notificação de online enviada para dispositivo: ${deviceKey}`);
-
-                // Reseta o controle para permitir nova notificação no futuro
-                if (this.offlineNotifications[deviceKey]) {
-                    this.offlineNotifications[deviceKey].notificationSent = false;
-                }
-
-                // Remove do histórico de offline
-                if (this.deviceOfflineHistory[deviceKey]) {
-                    delete this.deviceOfflineHistory[deviceKey];
-                }
+                console.log(`✅ Notificação de online enviada para dispositivo: ${deviceKey}`);
             } catch (error) {
-                console.error('Erro ao enviar notificação de online:', error);
-            }
-        } else if (offlineHistory) {
-            // Se o dispositivo estava offline mas ainda não tínhamos enviado alerta
-            // apenas limpa o histórico sem enviar notificação
-            delete this.deviceOfflineHistory[deviceKey];
-
-            if (this.offlineNotifications[deviceKey]) {
-                this.offlineNotifications[deviceKey].notificationSent = false;
+                console.error(`❌ Erro ao enviar notificação de online para ${deviceKey}:`, error);
             }
         }
+
+        // Reseta completamente o estado para permitir nova detecção
+        this.resetDeviceNotificationState(deviceKey);
+    } else {
+        console.log(`Dispositivo ${deviceKey} - Não precisa de notificação de online`);
     }
+}
 
     // Método opcional para resetar contadores de notificações
-    resetOfflineNotificationTracking(deviceKey) {
-        if (this.offlineNotifications[deviceKey]) {
-            this.offlineNotifications[deviceKey].notificationSent = false;
-        }
-
-        if (this.deviceOfflineHistory[deviceKey]) {
-            delete this.deviceOfflineHistory[deviceKey];
-        }
+    resetDeviceNotificationState(deviceKey) {
+    console.log(`Resetando estado de notificação para dispositivo: ${deviceKey}`);
+    
+    if (this.offlineNotifications[deviceKey]) {
+        delete this.offlineNotifications[deviceKey];
     }
+
+    if (this.deviceOfflineHistory[deviceKey]) {
+        delete this.deviceOfflineHistory[deviceKey];
+    }
+}
 
     formatDuration(milliseconds) {
         const seconds = Math.floor(milliseconds / 1000);
@@ -579,76 +580,74 @@ class NetViewServer {
     }
 
     updateDeviceState(name, result) {
-        result.timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-        //console.log(`Verificação concluída para ${name}: Status = ${result.status}`);
+    result.timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-        // Verificar se o dispositivo está offline e deve enviar notificação
-        if (result.status === 'Offline') {
-            this.sendOfflineNotification(result);
+    const category = result.category || 'Outros';
+    if (!this.deviceStates[category]) {
+        this.deviceStates[category] = [];
+    }
+
+    const previousState = this.getDevicePreviousState(name, category);
+    let updated = false;
+    let statusChanged = false;
+
+    // Atualiza ou adiciona o dispositivo no estado
+    this.deviceStates[category] = this.deviceStates[category].map(device => {
+        if (device.name === name) {
+            updated = true;
+            statusChanged = device.status !== result.status;
+            return result;
         }
+        return device;
+    });
 
-        if (result.status === 'Online') {
-            this.sendOnlineNotification(result);
-        }
+    if (!updated) {
+        this.deviceStates[category].push(result);
+        statusChanged = true;
+    }
 
-        const category = result.category || 'Outros';
-        if (!this.deviceStates[category]) {
-            this.deviceStates[category] = [];
-        }
+    console.log(`Status do dispositivo ${name}: ${result.status} (mudou: ${statusChanged})`);
 
-        const previousState = this.getDevicePreviousState(name, category);
-        let updated = false;
-        let statusChanged = false;
+    // Processa notificações baseado no status atual
+    if (result.status === 'Offline') {
+        this.sendOfflineNotification(result);
+    } else if (result.status === 'Online') {
+        this.sendOnlineNotification(result);
+    }
 
-        this.deviceStates[category] = this.deviceStates[category].map(device => {
-            if (device.name === name) {
-                updated = true;
-                statusChanged = device.status !== result.status;
-                return result;
-            }
-            return device;
+    // Envia atualizações para clientes WebSocket apenas quando há mudança
+    if (statusChanged) {
+        const update = JSON.stringify({
+            type: 'device_update',
+            device: result,
+            timestamp: result.timestamp
         });
 
-        if (!updated) {
-            this.deviceStates[category].push(result);
-            statusChanged = true; // Primeiro status = mudança
+        for (const client of this.clients) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(update);
+            }
         }
 
-        // Apenas enviar atualizações quando o status muda (Online -> Offline ou Offline -> Online)
-        if (statusChanged) {
-            const update = JSON.stringify({
-                type: 'device_update',
+        if (previousState) {
+            const stateChange = JSON.stringify({
+                type: 'state_change',
                 device: result,
+                previous: previousState.status,
+                current: result.status,
                 timestamp: result.timestamp
             });
 
             for (const client of this.clients) {
                 if (client.readyState === WebSocket.OPEN) {
-                    client.send(update);
-                    console.log(`Enviando atualização para cliente: ${name} -> ${result.status}`);
+                    client.send(stateChange);
                 }
             }
-
-            if (previousState) {
-                const stateChange = JSON.stringify({
-                    type: 'state_change',
-                    device: result,
-                    previous: previousState.status,
-                    current: result.status,
-                    timestamp: result.timestamp
-                });
-
-                for (const client of this.clients) {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(stateChange);
-                    }
-                }
-            }
-
-            // Enviar estatísticas atualizadas para todos os clientes
-            this.sendStatsToAll();
         }
+
+        this.sendStatsToAll();
     }
+}
 
     sendStatsToAll() {
         for (const client of this.clients) {
