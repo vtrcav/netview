@@ -12,9 +12,11 @@
 
 - **Node.js** 
 - **WebSocket (ws)** 
-- **WhatsApp Web.js** 
+- **whatsapp-web.js** 
 - **Vue.js** 
 - **Bootstrap** 
+- **Font Awesome**
+- **puppeteer**
 
 ## 📦 Instalação
 
