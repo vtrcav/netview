@@ -28,7 +28,7 @@
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/netview.git
+git clone https://github.com/vtrcav/netview.git
 cd netview
 ```
 
