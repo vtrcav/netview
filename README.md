@@ -13,10 +13,13 @@
 - **Node.js** 
 - **WebSocket (ws)** 
 - **whatsapp-web.js** 
+- **puppeteer**
+- **qrcode-terminal**
 - **Vue.js** 
+- **Vite**
 - **Bootstrap** 
 - **Font Awesome**
-- **puppeteer**
+
 
 ## 📦 Instalação
 
