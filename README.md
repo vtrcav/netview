@@ -72,8 +72,8 @@ Crie o arquivo `config/devices.json` com a estrutura:
 
 4. **Inicie o servidor**
 ```bash
-node netview_server.js [porta] [host]
-# Exemplo: node netview_server.js 8080 0.0.0.0
+node netview_server.js 
+# Exemplo: node netview_server.js 
 ```
 
 ### Primeira configuração do WhatsApp
@@ -111,7 +111,7 @@ node netview_server.js [porta] [host]
 ### Parâmetros de inicialização
 
 ```bash
-node server.js [porta] [host]
+node netview_server.js 
 ```
 
 - **porta**: Porta do servidor (padrão: 8080)
@@ -121,7 +121,11 @@ node server.js [porta] [host]
 
 ### Interface web
 
-Acesse `http://localhost:8080` para visualizar:
+A interface web fica na pasta public/ e é totalmente estática. Você pode servir essa pasta com qualquer servidor web (nginx, Apache, Vercel, Netlify, etc) ou simplesmente abrir o index.html diretamente no navegador da máquina que exibirá o dashboard
+
+- 1. Abra o arquivo public/js/app.js em um editor
+- 2. Localize a função chamada connectWebSocket
+- 3. Dentro desta função, você encontrará a const wsHost que inicia a conexão. Substituia 'IP_DO_SERVIDOR_AQUI' pelo IP/hostname do servidor NetView.
 
 - **Dashboard principal** com status de todos os dispositivos
 - **Estatísticas em tempo real** (online, offline, fora de horário)
