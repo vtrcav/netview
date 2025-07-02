@@ -34,7 +34,7 @@ class NetViewServer {
         this.OFFLINE_THRESHOLD = 15 * 1000;   // 15 segundos para considerar dispositivo offline
 
         // ID do grupo para enviar as notificações
-        this.notificationGroupId = 'COLOQUE_O_ID_AQUI';
+        this.notificationGroupId = 'SEU_ID_DO_GRUPO@g.us';
 
         // Configurações de log
         console.log(`Caminho do arquivo de configuração: ${this.configFile}`);

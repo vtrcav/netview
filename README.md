@@ -203,7 +203,7 @@ this.notificationGroupId = 'SEU_ID_DO_GRUPO@g.us';
 
 ### Configuração do grupo WhatsApp
 1. Execute o servidor e faça login
-2. Execute `node acha_grupo.js` para listar grupos
+2. Execute `node achagrupo.js` para listar grupos
 3. Copie o ID do grupo desejado
 4. Cole no arquivo de configuração
 
