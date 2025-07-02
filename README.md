@@ -120,11 +120,13 @@ node netview_server.js
 
 ### Interface web
 
-A interface web fica na pasta public/ e é totalmente estática. Você pode servir essa pasta com qualquer servidor web (nginx, Apache, Vercel, Netlify, etc) ou simplesmente abrir o index.html diretamente no navegador da máquina que exibirá o dashboard
+A interface web fica na pasta public/ e é totalmente estática. Você pode servir essa pasta com qualquer servidor web (nginx, Apache, etc) ou simplesmente abrir o index.html diretamente no navegador da máquina que exibirá o dashboard
 
-- 1. Abra o arquivo public/js/app.js em um editor
-- 2. Localize a função chamada connectWebSocket
-- 3. Dentro desta função, você encontrará a const wsHost que inicia a conexão. Substituia 'IP_DO_SERVIDOR_AQUI' pelo IP/hostname do servidor NetView.
+Configuração da interface web:
+
+1. Abra o arquivo public/js/app.js em um editor
+2. Localize a função chamada connectWebSocket
+3. Dentro desta função, você encontrará a const wsHost que inicia a conexão. Substituia 'IP_DO_SERVIDOR_AQUI' pelo IP/hostname do servidor NetView.
 
 - **Dashboard principal** com status de todos os dispositivos
 - **Estatísticas em tempo real** (online, offline, fora de horário)
