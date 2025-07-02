@@ -139,7 +139,7 @@ const app = new Vue({
           this.websocket.close();
         }
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.hostname || 'monitoramento.hnr.ma';
+        const wsHost = window.location.hostname || 'IP_DO_SERVIDOR_AQUI';
         const wsPort = 8080;
         const wsUrl = `${protocol}//${wsHost}:${wsPort}`;
         console.log('Conectando ao WebSocket:', wsUrl);
