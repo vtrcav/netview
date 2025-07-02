@@ -73,7 +73,6 @@ Crie o arquivo `config/devices.json` com a estrutura:
 4. **Inicie o servidor**
 ```bash
 node netview_server.js 
-# Exemplo: node netview_server.js 
 ```
 
 ### Primeira configuração do WhatsApp
@@ -198,9 +197,11 @@ Para alterar o grupo que recebe as notificações, modifique:
 this.notificationGroupId = 'SEU_ID_DO_GRUPO@g.us';
 ```
 
-**Como encontrar o ID do grupo:**
-1. Execute o servidor sem estar logado, faça a autenticação e depois execute o achagrupo.js
-2. Observe o ID do grupo que você quer usar
+### Configuração do grupo WhatsApp
+1. Execute o servidor e faça login
+2. Execute `node acha_grupo.js` para listar grupos
+3. Copie o ID do grupo desejado
+4. Cole no arquivo de configuração
 
 ## 📊 Monitoramento e logs
 
