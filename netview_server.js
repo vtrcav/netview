@@ -33,8 +33,8 @@ class NetViewServer {
         this.INITIAL_SCAN_DELAY = 60 * 1000;  // 1 minuto de delay após inicialização
         this.OFFLINE_THRESHOLD = 15 * 1000;   // 15 segundos para considerar dispositivo offline
 
-        // ID do grupo NTI para notificações
-        this.notificationGroupId = '120363402996376359@g.us';
+        // ID do grupo para enviar as notificações
+        this.notificationGroupId = 'COLOQUE_O_ID_AQUI';
 
         // Configurações de log
         console.log(`Caminho do arquivo de configuração: ${this.configFile}`);
