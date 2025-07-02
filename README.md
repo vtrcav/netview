@@ -120,7 +120,7 @@ node netview_server.js
 
 ### Interface web
 
-A interface web fica na pasta public/ e é totalmente estática. Você pode servir essa pasta com qualquer servidor web (nginx, Apache, etc) ou simplesmente abrir o index.html diretamente no navegador da máquina que exibirá o dashboard
+A interface web fica na pasta public/. Você pode servir essa pasta com qualquer servidor web (nginx, Apache, etc) ou simplesmente abrir o index.html diretamente no navegador da máquina que exibirá o dashboard
 
 Configuração da interface web:
 
