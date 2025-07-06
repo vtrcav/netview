@@ -1,6 +1,6 @@
 # NetView 3.0.0 - Sistema de monitoramento de rede
 
-![Node.js](https://img.shields.io/badge/Node.js-v18+-green?style=flat-square)
+![Node.js](https://img.shields.io/badge/Node.js-v20+-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square)
 
