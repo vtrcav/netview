@@ -31,7 +31,7 @@
 
 ### Pré-requisitos
 
-- Node.js v18 ou superior
+- Node.js v20 ou superior
 - npm ou yarn
 - WhatsApp instalado no celular (para autenticação)
 
