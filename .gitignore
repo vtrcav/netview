@@ -1,5 +1,5 @@
 node_modules
-.wwebjs_auth
-.wwebjs_cache
-config
-logs
+/.wwebjs_auth/
+/.wwebjs_cache/
+/logs/
+/config/
