@@ -1,4 +1,4 @@
-# NetView - Sistema simples de monitoramento de rede
+# NetView 3.0.0 - Sistema de monitoramento de rede
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
@@ -6,20 +6,26 @@
 
 ## 📋 Sobre 
 
-**NetView** é um sistema simples de monitoramento de rede em tempo real que combina verificação automatizada de dispositivos via ping, notificações por WhatsApp e interface web responsiva. 
+**NetView 3.0.0** é uma reengenharia completa do sistema de monitoramento de rede, agora com arquitetura modular, interface web integrada e CLI interativo. Monitora dispositivos via ping, envia notificações por WhatsApp e oferece dashboard em tempo real.
+
+### 🆕 Novidades da versão 3.0.0
+
+- **Arquitetura modular**: código organizado em módulos para melhor manutenção
+- **Interface web integrada**: servidor web embutido com dashboard responsivo
+- **CLI interativo**: gerenciamento completo via terminal
+- **Sistema de logs robusto**: logging detalhado com Winston
+- **Configuração via WebSocket**: comunicação em tempo real com a interface
 
 ## 🛠️ Tecnologias utilizadas
 
 - **Node.js** 
-- **WebSocket (ws)** 
-- **whatsapp-web.js** 
-- **puppeteer**
-- **qrcode-terminal**
-- **Vue.js** 
-- **Vite**
-- **Bootstrap** 
-- **Font Awesome**
-
+- **Express.js** - servidor web
+- **WebSocket (ws)** - comunicação em tempo real
+- **whatsapp-web.js** - integração WhatsApp
+- **Puppeteer** - automação do navegador
+- **qrcode-terminal** - QR Code no terminal
+- **Chalk** - estilização do CLI
+- **Winston** - sistema de logs
 
 ## 📦 Instalação
 
@@ -52,16 +58,16 @@ Crie o arquivo `config/devices.json` com a estrutura:
 {
   "Servidor-Principal": {
     "ip": "192.168.1.100",
-    "category": "Servidores",
     "description": "Servidor principal da empresa",
+    "category": "Servidores",
     "icon": "server",
     "24h": true
   },
   "Switch-Andar1": {
     "ip": "192.168.1.10",
-    "category": "Rede",
     "description": "Switch do primeiro andar",
-    "icon": "network",
+    "category": "Rede",
+    "icon": "router",
     "workingHours": {
       "weekday": { "start": 7, "end": 18 },
       "weekend": { "start": 9, "end": 16 }
@@ -72,14 +78,17 @@ Crie o arquivo `config/devices.json` com a estrutura:
 
 4. **Inicie o servidor**
 ```bash
-node netview_server.js 
+npm start
 ```
 
 ### Primeira configuração do WhatsApp
 
 1. Execute o servidor
-2. Escaneie o código QR que aparecerá no terminal com seu WhatsApp
-3. Aguarde a mensagem de confirmação no grupo configurado
+2. No CLI, digite `wa-connect`
+3. Escaneie o código QR que aparecerá no terminal
+4. Use `wa-groups` para listar seus grupos
+5. Use `wa-set` para selecionar o grupo de notificações
+6. Teste com `wa-test`
 
 ## ⚙️ Configuração
 
@@ -89,8 +98,8 @@ node netview_server.js
 {
   "nome-do-dispositivo": {
     "ip": "endereço-ip",
+    "description": "descrição-do-dispositivo",
     "category": "categoria-do-dispositivo",
-    "description": "descrição-opcional",
     "icon": "ícone-opcional",
     "24h": true/false,
     "workingHours": {
@@ -110,29 +119,48 @@ node netview_server.js
 ### Parâmetros de inicialização
 
 ```bash
-node netview_server.js 
+node server.js [PORTA] [HOST]
 ```
 
-- **porta**: Porta do servidor (padrão: 8080)
-- **host**: Endereço de bind (padrão: 0.0.0.0)
+- **PORTA**: Porta do servidor (padrão: 80)
+- **HOST**: Endereço de bind (padrão: localhost)
+
+Exemplo:
+```bash
+node server.js 3000 192.168.1.100
+```
 
 ## 🚀 Uso
 
 ### Interface web
 
-A interface web fica na pasta public/. Você pode servir essa pasta com qualquer servidor web (nginx, Apache, etc) ou simplesmente abrir o index.html diretamente no navegador da máquina que exibirá o dashboard
+Acesse a interface web em `http://localhost:80/` (ou a porta configurada):
 
 - **Dashboard principal** com status de todos os dispositivos
 - **Estatísticas em tempo real** (online, offline, fora de horário)
-- **Filtro de dispositivos** de dispositivos específicos
+- **Filtro por categoria** de dispositivos
+- **Atualização automática** via WebSocket
 
-**Configuração da interface web:**
+### CLI interativo
 
-1. Abra o arquivo public/js/app.js em um editor
-2. Localize a função chamada connectWebSocket
-3. Dentro desta função, você encontrará a const wsHost que inicia a conexão. Substituia 'IP_DO_SERVIDOR_AQUI' pelo IP/hostname do servidor NetView.
+O CLI é ativado automaticamente ao iniciar o servidor. Comandos disponíveis:
 
+#### Comandos WhatsApp
+- `wa-connect`: Conecta ao WhatsApp (exibe QR Code)
+- `wa-disconnect`: Desconecta do WhatsApp
+- `wa-status`: Status da conexão e grupo configurado
+- `wa-groups`: Lista todos os grupos disponíveis
+- `wa-set`: Seleciona grupo para notificações
+- `wa-test`: Envia mensagem de teste
+- `wa-debug`: Log detalhado do cliente WhatsApp
 
+#### Comandos do sistema
+- `devices`: Status atual de todos os dispositivos
+- `logs-toggle`: Ativa/desativa logs em tempo real
+- `logs`: Exibe últimas 20 linhas do log
+- `clear`: Limpa a tela
+- `help`: Lista todos os comandos
+- `exit`: Encerra o programa
 
 ### Notificações WhatsApp
 
@@ -142,12 +170,12 @@ O sistema envia automaticamente:
 - ✅ **Confirmações de online**: quando um dispositivo volta a funcionar
 - 📊 **Relatórios de tempo**: duração dos períodos offline
 
-### API webSocket
+### API WebSocket
 
 O servidor expõe uma API WebSocket para integração:
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8080');
+const ws = new WebSocket('ws://localhost:80');
 
 // Eventos disponíveis
 ws.on('message', (data) => {
@@ -173,6 +201,47 @@ ws.send(JSON.stringify({
 }));
 ```
 
+## 📁 Estrutura do projeto
+
+```
+.
+├── config/
+│   ├── devices.json
+│   └── whatsapp_group.json
+├── logs/
+│   └── netview.log
+├── public/
+│   ├── index.html
+│   ├── favicon.png
+│   └── assets/
+│       ├── css/
+│       │   └── style.css
+│       └── js/
+│           └── app.js
+├── src/
+│   ├── cli/
+│   │   └── CliManager.js
+│   ├── config/
+│   │   └── ConfigManager.js
+│   ├── core/
+│   │   └── NetViewServer.js
+│   ├── network/
+│   │   ├── DeviceStateManager.js
+│   │   └── PingService.js
+│   ├── notifications/
+│   │   ├── NotificationManager.js
+│   │   └── WhatsAppClient.js
+│   ├── utils/
+│   │   ├── helpers.js
+│   │   ├── Logger.js
+│   │   └── TimerManager.js
+│   └── websocket/
+│       └── WebSocketHandler.js
+├── server.js
+├── package.json
+└── README.md
+```
+
 ## 🔧 Personalização
 
 ### Intervalos de verificação
@@ -193,31 +262,19 @@ this.INITIAL_SCAN_DELAY = 60 * 1000;              // Delay inicial após startup
 this.OFFLINE_THRESHOLD = 15 * 1000;               // Tempo para considerar offline
 ```
 
-### ID do grupo WhatsApp
-
-Para alterar o grupo que recebe as notificações, modifique:
-
-```javascript
-this.notificationGroupId = 'SEU_ID_DO_GRUPO@g.us';
-```
-
-### Configuração do grupo WhatsApp
-1. Execute o servidor e faça login
-2. Execute `node achagrupo.js` para listar grupos
-3. Copie o ID do grupo desejado
-4. Cole no arquivo de configuração
-
 ## 📊 Monitoramento e logs
 
-O sistema gera logs detalhados para monitoramento:
+O sistema gera logs detalhados em `logs/netview.log`:
 
 ```
-[INFO] Servidor NetView iniciado em 0.0.0.0:8080
+[INFO] Servidor NetView iniciado em localhost:80
 [INFO] Cliente WhatsApp está pronto!
 [INFO] Configuração de dispositivos carregada. Total: 25
 [INFO] ✅ Notificação de offline enviada para dispositivo: Switch-Andar1
 [INFO] Status do dispositivo Servidor-Principal: Online (mudou: false)
 ```
+
+Use `logs-toggle` no CLI para ver logs em tempo real ou `logs` para ver as últimas entradas.
 
 ## 🐛 Solução de problemas
 
@@ -225,9 +282,28 @@ O sistema gera logs detalhados para monitoramento:
 ```bash
 # Limpe o cache de autenticação
 rm -rf .wwebjs_auth
-# Reinicie o servidor e escaneie o QR novamente
+# Reinicie o servidor e use wa-connect no CLI
 ```
+
+### Interface web não carrega
+- Verifique se o servidor está rodando na porta correta
+- Acesse `http://localhost:PORTA/` no navegador
+- Verifique os logs com o comando `logs` no CLI
 
 ### Alta utilização de CPU
 - Reduza `concurrentPings` para um valor menor
 - Aumente `pingInterval` para verificações menos frequentes
+- Use `wa-disconnect` se não precisar de notificações WhatsApp
+
+## 🔄 Migração da versão 2.0.0
+
+Para migrar da versão 2.0.0:
+
+1. Faça backup do seu arquivo `config/devices.json`
+2. A estrutura do arquivo de dispositivos permanece compatível
+3. A configuração do WhatsApp agora é feita via CLI
+4. A interface web agora é integrada ao servidor principal
+
+## 📝 Licença
+
+Este projeto está licenciado sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.

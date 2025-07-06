@@ -1,8 +1,6 @@
-/* Estilos Globais - Tema Profissional Otimizado */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
 :root {
-  /* Paleta mais harmoniosa e minimalista */
   --primary-bg: #0f1118;
   --secondary-bg: #161b26;
   --tertiary-bg: #1e2533;
@@ -13,7 +11,6 @@
   --primary-accent: #4b7bec;
   --secondary-accent: #3867d6;
   
-  /* Estados dos dispositivos */
   --online-color: #10b981;
   --offline-color: #ef4444;
   --outofhours-color: #64748b;
@@ -35,7 +32,6 @@ body {
   line-height: 1.5;
 }
 
-/* Header e Navegação - mais compacto */
 .header {
   background-color: var(--secondary-bg);
   padding: 0.8rem 1.2rem;
@@ -181,7 +177,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* Filtros - mais compactos */
 .filters-container {
   background-color: var(--tertiary-bg);
   padding: 12px 16px;
@@ -236,7 +231,6 @@ body {
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
 }
 
-/* Grade de Dispositivos - otimizada para mais itens */
 .devices-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -244,7 +238,6 @@ body {
   padding: 12px;
 }
 
-/* Para telas grandes, mostrar ainda mais dispositivos */
 @media (min-width: 1920px) {
   .devices-grid {
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -267,7 +260,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* Cards de dispositivos - mais compactos */
 .device-card {
   border-radius: 8px;
   padding: 16px;
@@ -280,7 +272,6 @@ body {
   border: 1px solid var(--border-color);
 }
 
-/* Card offline - Vermelho com destaque visual */
 .device-card {
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
@@ -297,7 +288,6 @@ body {
   transition: all var(--transition-speed);
 }
 
-/* Card online - Verde */
 .device-card.online {
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
@@ -306,7 +296,6 @@ body {
   background-color: var(--online-color);
 }
 
-/* Card fora de horário - Cinza */
 .device-card.gray {
   border: 1px solid rgba(100, 116, 139, 0.25);
 }
@@ -446,7 +435,6 @@ body {
   opacity: 0.9;
 }
 
-/* Estado de Piscando para alertas de dispositivos offline */
 @keyframes blinkOffline {
   0% { box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2); }
   50% { box-shadow: 0 2px 12px rgba(239, 68, 68, 0.4); }
@@ -457,7 +445,6 @@ body {
   animation: blinkOffline 2s infinite;
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -551,7 +538,6 @@ body {
   gap: 12px;
 }
 
-/* Botões personalizados */
 .btn {
   border-radius: 6px;
   font-weight: 500;
@@ -698,7 +684,6 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
   .title {
     flex-direction: column;
@@ -738,7 +723,6 @@ body {
   }
 }
 
-/* Telas médias - otimizar para tablets */
 @media (min-width: 769px) and (max-width: 1200px) {
   .devices-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -754,7 +738,6 @@ body {
   }
 }
 
-/* Customizações adicionais dos componentes Bootstrap */
 .form-control {
   background-color: rgba(15, 17, 24, 0.7);
   color: var(--text-color);
@@ -781,7 +764,6 @@ body {
   color: var(--text-muted) !important;
 }
 
-/* Badges aprimorados */
 .badge {
   font-weight: 500;
   letter-spacing: 0.3px;
@@ -821,12 +803,20 @@ body {
   border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
-/* Efeitos hover e foco aprimorados */
 a, button, select, input {
   transition: all 0.2s ease;
 }
 
-/* Scrollbar personalizada - mais fina */
+a.text-light {
+  color: var(--text-color) !important;
+  text-decoration: none;
+}
+
+a.text-light:hover {
+  color: var(--primary-accent);
+  text-decoration: underline;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

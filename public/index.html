@@ -5,12 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="NetView - Sistema de Monitoramento de Rede">
   <script src="assets/js/vue.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/fontawesome-free-6.3.0-web/css/all.min.css" />
-  <link rel="stylesheet" href="assets/bootstrap-4.5.3-dist/css/bootstrap.min.css"
-        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+J9OqM70yVrj9XuOf7F5/2m81srIXr"
-        crossorigin="anonymous">
-  <link rel="shortcut icon" href="assets/img/favicon.png" type="image/x-icon">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
   <title>NetView</title>
 </head>
 <body>
@@ -20,12 +17,12 @@
         <div class="title">
           <h1>NetView</h1>
           <div class="header-actions">
-            <!-- <button @click="manualUpdate" class="btn btn-sm btn-primary" :disabled="connectionStatus !== 'Conectado'">
+            <button @click="manualUpdate" class="btn btn-sm btn-primary" :disabled="connectionStatus !== 'Conectado'">
               <i class="fas fa-sync-alt"></i> Atualizar
             </button>
             <button @click="openConfig" class="btn btn-sm btn-secondary">
               <i class="fas fa-cog"></i> Configurações
-            </button> -->
+            </button>
             <a href="#" class="btn btn-sm btn-secondary" @click.prevent="showModal = true">
               <i class="fas fa-info-circle"></i> Sobre
             </a>
@@ -57,7 +54,6 @@
           </div>
         </div>
       </div>
-      
       <!-- Filtros -->
       <div class="filters-container">
         <div class="filters">
@@ -84,16 +80,13 @@
         </div>
       </div>
     </div>
-    
     <div class="alert alert-danger" v-if="error">
       <i class="fas fa-exclamation-triangle"></i> {{ error }}
     </div>
-    
     <div v-if="loading" class="spinner-container">
       <div class="spinner"></div>
       <p>Estabelecendo conexão com o servidor...</p>
     </div>
-    
     <div v-else class="devices-grid">
       <div v-for="device in filteredDevices" :key="device.ip" class="device-card-container">
         <a :href="'http://' + device.ip" target="_blank" rel="noopener noreferrer" class="device-link">
@@ -106,25 +99,25 @@
                   'fas',
                   device.status === 'Online' ? 'fa-check-circle' : 
                   device.status === 'Fora de horário' ? 'fa-clock' : 'fa-circle-xmark'
-                ]"></i> 
+                ]"></i>
                 {{ device.name }}
               </h3>
               <div class="device-category" v-if="device.category">{{ device.category }}</div>
             </div>
             <div class="device-details">
               <p class="device-ip">{{ device.ip }}</p>
-              <!-- <p class="device-ping" v-if="device.responseTime !== null">
+
+              <p class="device-ping" v-if="config.showResponseTime && device.responseTime !== null">
                 <i class="fas fa-tachometer-alt"></i> {{ formatResponseTime(device.responseTime) }}
               </p>
-              <p class="device-timestamp" v-if="device.timestamp">
+              <p class="device-timestamp" v-if="config.showTimestamp && device.timestamp">
                 <i class="fas fa-history"></i> {{ new Date(device.timestamp).toLocaleTimeString() }}
-              </p> -->
+              </p>
             </div>
           </div>
-        </a>    
-      </div>    
+        </a>
+      </div>
     </div>
-    
     <!-- Modal Sobre -->
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
@@ -133,24 +126,39 @@
           <button @click="showModal = false" class="modal-close">×</button>
         </div>
         <div class="modal-body">
-          <p><strong>Versão:</strong> 2.0.0</p>
-          <p>NetView é uma aplicação web de monitoramento de dispositivos em rede. Feito com Vue.js e WebSockets para monitoramento em tempo real.</p>
+          <p><strong>Versão:</strong> 3.0.0</p>
+          <p>NetView é uma aplicação de monitoramento de dispositivos em rede com arquitetura modular, interface web
+            integrada e CLI interativo.</p>
+
           <p><strong>Funcionalidades:</strong></p>
           <ul>
             <li>Monitoramento em tempo real via ICMP (ping)</li>
             <li>Comunicação via WebSockets para atualizações instantâneas</li>
             <li>Detecção de dispositivos online/offline</li>
             <li>Suporte a dispositivos com horário de funcionamento específico</li>
-            <li>Notificações de dispositivos offline</li>
+            <li><strong>Notificações WhatsApp</strong> - Alertas em grupo configurado</li>
+            <li><strong>Dashboard responsivo</strong> - Interface moderna com estatísticas</li>
           </ul>
-          <p>Desenvolvido por: <strong><a href="https://github.com/vtrcav" target="_blank">Vitor Cavalcante</a></strong></p>
+
+          <p><strong>Novidades da v3.0.0:</strong></p>
+          <ul>
+            <li>Arquitetura modular reengenhada</li>
+            <li>Servidor web integrado</li>
+            <li>CLI interativo - Gerenciamento via terminal</li>
+            <li>Sistema de logs robusto (Winston)</li>
+            <li>API WebSocket para integrações</li>
+          </ul>
+          <p class="text-muted mt-3">
+            <small>Tecnologias: Node.js, Express.js, Vue.js, WebSocket, whatsapp-web.js</small>
+          </p>
+          <p>Desenvolvido por: <strong><a href="https://github.com/vtrcav" target="_blank" class="text-light">Vitor
+                Cavalcante</a></strong></p>
         </div>
         <div class="modal-footer">
           <button @click="showModal = false" class="btn btn-primary">Fechar</button>
         </div>
       </div>
     </div>
-    
     <!-- Modal Configurações -->
     <div v-if="showConfigModal" class="modal-overlay">
       <div class="modal-content">
@@ -160,16 +168,29 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>Intervalo de Atualização (segundos)</label>
-            <input type="number" v-model.number="config.updateInterval" min="1" max="300" class="form-control">
-            <small class="form-text text-muted">Frequência mínima de 1s para monitoramento em tempo real</small>
-          </div>
-          <div class="form-group">
             <div class="custom-control custom-switch">
-              <input type="checkbox" class="custom-control-input" id="notificationsSwitch" v-model="config.showNotifications">
+              <input type="checkbox" class="custom-control-input" id="notificationsSwitch"
+                v-model="config.showNotifications">
               <label class="custom-control-label" for="notificationsSwitch">Mostrar notificações do navegador</label>
             </div>
-            <small class="form-text text-muted">Receba alertas quando dispositivos ficarem offline</small>
+            <small class="form-text text-muted">Receba alertas quando dispositivos ficarem offline.</small>
+          </div>
+          <hr>
+          <h5>Exibição nos Cards</h5>
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="showResponseTimeSwitch"
+                v-model="config.showResponseTime">
+              <label class="custom-control-label" for="showResponseTimeSwitch">Exibir tempo de resposta (ms)</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="showTimestampSwitch"
+                v-model="config.showTimestamp">
+              <label class="custom-control-label" for="showTimestampSwitch">Exibir horário da verificação</label>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -181,4 +202,5 @@
   </div>
   <script src="assets/js/app.js"></script>
 </body>
+
 </html>

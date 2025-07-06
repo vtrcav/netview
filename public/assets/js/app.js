@@ -26,9 +26,10 @@ const app = new Vue({
         category: 'all'
       },
       config: {
-        showNotifications: true
+        showNotifications: true,
+        showResponseTime: true,
+        showTimestamp: true
       },
-      // Nova propriedade para a ordem das categorias
       categoryOrder: [
         'Servidores',
         'Sistemas',
@@ -53,8 +54,6 @@ const app = new Vue({
     computed: {
         filteredDevices() {
             let filtered = [];
-            
-            // Primeiro filtra os dispositivos normalmente
             Object.keys(this.deviceGroups).forEach(groupName => {
               this.deviceGroups[groupName].forEach(device => {
                 if (this.filter.status !== 'all' && device.status !== this.filter.status) return;
@@ -65,52 +64,28 @@ const app = new Vue({
                 filtered.push(device);
               });
             });
-            
-            // Ordena os dispositivos filtrados por:
-            // 1. Status (Offline primeiro, Fora de horário por último)
-            // 2. Categoria (seguindo categoryOrder)
-            // 3. Nome (ordem alfabética)
             return filtered.sort((a, b) => {
-              // Primeiro critério: status
-              // Prioridades: 1. Offline, 2. Online, 3. Fora de horário
-              
-              // Se um é "Fora de horário" e o outro não, o "Fora de horário" vai para o final
               if (a.status === 'Fora de horário' && b.status !== 'Fora de horário') return 1;
               if (a.status !== 'Fora de horário' && b.status === 'Fora de horário') return -1;
-              
-              // Se nenhum é "Fora de horário" ou ambos são, seguimos com a regra de Offline primeiro
               if (a.status === 'Offline' && b.status !== 'Offline') return -1;
               if (a.status !== 'Offline' && b.status === 'Offline') return 1;
-              
-              // Segundo critério: categoria conforme categoryOrder
               const categoryA = a.category || 'Outros';
               const categoryB = b.category || 'Outros';
-              
               const indexA = this.categoryOrder.indexOf(categoryA);
               const indexB = this.categoryOrder.indexOf(categoryB);
-              
-              // Se a categoria não estiver na lista de ordem, coloca no final
               const orderA = indexA !== -1 ? indexA : this.categoryOrder.length;
               const orderB = indexB !== -1 ? indexB : this.categoryOrder.length;
-              
               if (orderA !== orderB) return orderA - orderB;
-              
-              // Terceiro critério: ordem alfabética por nome
               return a.name.localeCompare(b.name);
             });
         },
       categories() {
         const allCategories = Object.keys(this.deviceGroups || {});
-        
-        // Ordena as categorias de acordo com a ordem definida
         return allCategories.sort((a, b) => {
           const indexA = this.categoryOrder.indexOf(a);
           const indexB = this.categoryOrder.indexOf(b);
-          
-          // Se a categoria não estiver na lista de ordem, coloca no final
           const orderA = indexA !== -1 ? indexA : this.categoryOrder.length;
           const orderB = indexB !== -1 ? indexB : this.categoryOrder.length;
-          
           return orderA - orderB;
         });
       },
@@ -139,14 +114,12 @@ const app = new Vue({
           this.websocket.close();
         }
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.hostname || 'IP_DO_SERVIDOR_AQUI';
-        const wsPort = 8080;
+        const wsHost = window.location.hostname || 'localhost';
+        const wsPort = 80;
         const wsUrl = `${protocol}//${wsHost}:${wsPort}`;
         console.log('Conectando ao WebSocket:', wsUrl);
-        
         this.connectionStatus = 'Conectando...';
         this.websocket = new WebSocket(wsUrl);
-        
         this.websocket.onopen = this.handleWebSocketOpen;
         this.websocket.onmessage = this.handleWebSocketMessage;
         this.websocket.onclose = this.handleWebSocketClose;
@@ -162,11 +135,9 @@ const app = new Vue({
       },
       handleWebSocketMessage(event) {
         try {
-          // Suporte para múltiplas mensagens em uma única transmissão
           const messages = event.data.split('\n').map(msg => JSON.parse(msg));
           messages.forEach(data => {
             console.log('Mensagem recebida:', data);
-            
             switch (data.type) {
               case 'status_update':
                 this.processInitialState(data.groups);
@@ -196,7 +167,7 @@ const app = new Vue({
         }
       },
       processInitialState(groups) {
-        this.deviceGroups = groups; // Diretamente usa os grupos enviados pelo servidor
+        this.deviceGroups = groups; 
         this.updateDevicesArray();
         this.updateStats();
       },
@@ -205,14 +176,12 @@ const app = new Vue({
         if (!this.deviceGroups[category]) {
           this.$set(this.deviceGroups, category, []);
         }
-        
         const index = this.deviceGroups[category].findIndex(d => d.name === device.name);
         if (index >= 0) {
           this.$set(this.deviceGroups[category], index, device);
         } else {
           this.deviceGroups[category].push(device);
         }
-        
         this.updateDevicesArray();
         this.updateStats();
       },
