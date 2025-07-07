@@ -2,7 +2,7 @@
 
 ## 📋 Sobre
 
-NetView é um sistema de monitoramento de rede robusto com arquitetura modular, interface web integrada e um poderoso CLI interativo. Monitora dispositivos via ping, envia notificações por WhatsApp e oferece um dashboard em tempo real.
+NetView é um sistema simples de monitoramento de rede via ping. Possui interface web, notificações via WhatsApp e comandos interativos no terminal (CLI).
 
 ## 🆕 Novidades da versão 3.1
 
