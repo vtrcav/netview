@@ -6,10 +6,10 @@ NetView é um sistema de monitoramento de rede robusto com arquitetura modular, 
 
 ## 🆕 Novidades da versão 3.1
 
-- **Gerenciamento Avançado via CLI**: Adicione, edite e remova dispositivos de forma interativa.
-- **Histórico de Dispositivos**: Visualize o histórico de status (Online/Offline) de cada dispositivo.
-- **Configuração de Servidor via CLI**: Altere o host e a porta do servidor diretamente pelo terminal.
-- **Reset de Sessão WhatsApp**: Um comando seguro para limpar a sessão salva do WhatsApp.
+- **Gerenciamento avançado via CLI**: Adicione, edite e remova dispositivos de forma interativa
+- **Histórico de dispositivos**: Visualize o histórico de status (Online/Offline) de cada dispositivo
+- **Configuração de servidor via CLI**: Altere o host e a porta do servidor diretamente pelo terminal
+- **Reset de sessão WhatsApp**: Limpar a sessão salva do WhatsApp pelo CLI
 
 ## 🛠️ Tecnologias utilizadas
 
