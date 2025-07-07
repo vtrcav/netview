@@ -106,7 +106,6 @@
             </div>
             <div class="device-details">
               <p class="device-ip">{{ device.ip }}</p>
-
               <p class="device-ping" v-if="config.showResponseTime && device.responseTime !== null">
                 <i class="fas fa-tachometer-alt"></i> {{ formatResponseTime(device.responseTime) }}
               </p>
@@ -126,10 +125,9 @@
           <button @click="showModal = false" class="modal-close">×</button>
         </div>
         <div class="modal-body">
-          <p><strong>Versão:</strong> 3.0.0</p>
+          <p><strong>Versão:</strong> 3.1.0</p>
           <p>NetView é uma aplicação de monitoramento de dispositivos em rede com arquitetura modular, interface web
             integrada e CLI interativo.</p>
-
           <p><strong>Funcionalidades:</strong></p>
           <ul>
             <li>Monitoramento em tempo real via ICMP (ping)</li>
@@ -139,8 +137,7 @@
             <li><strong>Notificações WhatsApp</strong> - Alertas em grupo configurado</li>
             <li><strong>Dashboard responsivo</strong> - Interface moderna com estatísticas</li>
           </ul>
-
-          <p><strong>Novidades da v3.0.0:</strong></p>
+          <p><strong>Novidades da v3.1.0:</strong></p>
           <ul>
             <li>Arquitetura modular reengenhada</li>
             <li>Servidor web integrado</li>
@@ -184,7 +181,6 @@
               <label class="custom-control-label" for="showResponseTimeSwitch">Exibir tempo de resposta (ms)</label>
             </div>
           </div>
-
           <div class="form-group">
             <div class="custom-control custom-switch">
               <input type="checkbox" class="custom-control-input" id="showTimestampSwitch"
@@ -200,7 +196,7 @@
       </div>
     </div>
   </div>
+  <script src="/assets/js/config.js"></script> 
   <script src="assets/js/app.js"></script>
 </body>
-
 </html>

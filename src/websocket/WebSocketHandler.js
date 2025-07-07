@@ -41,7 +41,7 @@ class WebSocketHandler {
                         const configData = JSON.stringify({
                             type: 'config_data',
                             config: this.server.deviceConfig,
-                            timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' }).replace(',', ''),
+                            timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }).replace(',', ''),
                         });
                         ws.send(configData);
                         break;

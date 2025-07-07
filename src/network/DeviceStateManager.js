@@ -1,9 +1,10 @@
 const logger = require('../utils/Logger');
+const { logStatusChange } = require('../utils/HistoryLogger');
 class DeviceStateManager {
     constructor(server) {
         this.server = server;
     }
-    updateDeviceState(name, result) {
+    async updateDeviceState(name, result) {
         result.timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
         const category = result.category || 'Outros';
         if (!this.server.deviceStates[category]) {
@@ -31,6 +32,7 @@ class DeviceStateManager {
             this.server.notificationManager.sendOnlineNotification(result);
         }
         if (statusChanged) {
+            await logStatusChange(result.name, result.status);
             const update = JSON.stringify({
                 type: 'device_update',
                 device: result,

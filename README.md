@@ -1,4 +1,4 @@
-# NetView 3.0.0 - Sistema de monitoramento de rede
+# NetView - Sistema de monitoramento de rede
 
 ![Node.js](https://img.shields.io/badge/Node.js-v20+-green?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
@@ -6,9 +6,9 @@
 
 ## 📋 Sobre 
 
-**NetView 3.0.0** é uma reengenharia completa do sistema de monitoramento de rede, agora com arquitetura modular, interface web integrada e CLI interativo. Monitora dispositivos via ping, envia notificações por WhatsApp e oferece dashboard em tempo real.
+**NetView v3** é uma reengenharia completa do sistema de monitoramento de rede, agora com arquitetura modular, interface web integrada e CLI interativo. Monitora dispositivos via ping, envia notificações por WhatsApp e oferece dashboard em tempo real.
 
-### 🆕 Novidades da versão 3.0.0
+### 🆕 Novidades da versão
 
 - **Arquitetura modular**: código organizado em módulos para melhor manutenção
 - **Interface web integrada**: servidor web embutido com dashboard responsivo

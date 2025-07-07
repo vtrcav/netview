@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
 const { ConfigManager } = require('../config/ConfigManager');
 const { PingService } = require('../network/PingService');
 const { DeviceStateManager } = require('../network/DeviceStateManager');
@@ -34,6 +35,7 @@ class NetViewServer {
     this.notificationGroupId = null;
     this.configLastModified = 0;
     this.isReadyForNotifications = false;
+    this.host = '0.0.0.0'; this.port = 80; this.loadServerConfig();
     this.configManager = new ConfigManager(this);
     this.pingService = new PingService(this);
     this.deviceStateManager = new DeviceStateManager(this);
@@ -44,6 +46,24 @@ class NetViewServer {
     this.cliManager = new CliManager(this);
     logger.info(`Caminho do arquivo de configuração: ${this.configFile}`);
     logger.info(`configLastModified inicializado como: ${this.configLastModified}`);
+  }
+  loadServerConfig() {
+    const configPath = path.join(__dirname, '../../config/server.json');
+    try {
+      if (fs.existsSync(configPath)) {
+        const rawConfig = fs.readFileSync(configPath);
+        const serverConfig = JSON.parse(rawConfig);
+        this.host = serverConfig.host || this.host;
+        this.port = serverConfig.port || this.port;
+        logger.info(`Configuração do servidor carregada de server.json: ${this.host}:${this.port}`);
+      } else {
+        const defaultConfig = JSON.stringify({ host: this.host, port: this.port }, null, 2);
+        fs.writeFileSync(configPath, defaultConfig);
+        logger.warn('Arquivo config/server.json não encontrado. Criado com valores padrão.');
+      }
+    } catch (error) {
+      logger.error(`Erro ao carregar config/server.json. Usando valores padrão. Erro: ${error.message}`);
+    }
   }
   async startServices() {
     this.whatsappClient.loadGroupId();
@@ -82,8 +102,9 @@ const netViewServer = new NetViewServer();
 const app = express();
 app.use(express.static('public'));
 app.get('/assets/js/config.js', (req, res) => {
-  const wsHost = req.hostname || 'localhost';
-  const wsPort = port;
+  const wsHost = req.hostname;
+  const wsPort = netViewServer.port;
+
   res.set('Content-Type', 'application/javascript');
   res.send(`window.NETVIEW_CONFIG = { wsHost: '${wsHost}', wsPort: ${wsPort} };`);
 });
@@ -92,9 +113,10 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws, req) => {
   netViewServer.webSocketHandler.handleConnection(ws, req);
 });
-server.listen(port, host, () => {
-  logger.info(`Servidor NetView iniciado em ${host}:${port}`);
-  logger.info(`Interface web disponível em: http://${host}:${port}/`);
+server.listen(netViewServer.port, netViewServer.host, () => {
+  const displayHost = netViewServer.host === '0.0.0.0' ? 'localhost' : netViewServer.host;
+  logger.info(`Servidor NetView iniciado em ${netViewServer.host}:${netViewServer.port}`);
+  logger.info(`Interface web disponível em: http://${displayHost}:${netViewServer.port}/`);
   netViewServer.startServices();
 });
 module.exports = { NetViewServer };
