@@ -8,9 +8,9 @@ NetView é um sistema simples de monitoramento de rede via ping. Possui interfac
 
 ## 🆕 Novidades da versão 3.1
 
-- **Gerenciamento avançado via CLI**: Adicione, edite e remova dispositivos de forma interativa
-- **Histórico de dispositivos**: Visualize o histórico de status (Online/Offline) de cada dispositivo
-- **Configuração de servidor via CLI**: Altere o host e a porta do servidor diretamente pelo terminal
+- **Gerenciamento via CLI**: Adicione, edite e remova dispositivos
+- **Histórico de dispositivos**: Visualize o histórico de status de cada dispositivo
+- **Configuração de servidor via CLI**: Altere o host/porta do servidor
 - **Reset de sessão WhatsApp**: Limpar a sessão salva do WhatsApp pelo CLI
 
 ## 🛠️ Tecnologias utilizadas
@@ -111,40 +111,9 @@ Controla as configurações do servidor web. Gerencie através dos comandos `con
 
 Acesse a interface web usando o IP do seu servidor e a porta configurada (ex: `http://localhost:80/`):
 
-- Dashboard principal com status de todos os dispositivos.
-- Estatísticas em tempo real (online, offline, fora de horário).
-- Filtro por categoria e nome/IP dos dispositivos.
-- Atualização automática via WebSocket.
+### CLI
 
-### CLI interativo
-
-O CLI é ativado automaticamente ao iniciar o servidor. Comandos disponíveis:
-
-#### Comandos WhatsApp
-
-- `wa-connect`: Conecta ao WhatsApp (exibe QR Code).
-- `wa-disconnect`: Desconecta do WhatsApp.
-- `wa-status`: Status da conexão e grupo configurado.
-- `wa-groups`: Lista todos os grupos disponíveis.
-- `wa-set`: Seleciona grupo para notificações.
-- `wa-test`: Envia mensagem de teste.
-- `wa-reset`: Apaga a sessão salva do WhatsApp para forçar uma nova autenticação.
-- `wa-debug`: Log detalhado do cliente WhatsApp.
-
-#### Comandos do sistema
-
-- `devices`: Status atual de todos os dispositivos.
-- `device-add`: Assistente para adicionar um novo dispositivo.
-- `device-edit`: Edita as informações de um dispositivo existente.
-- `device-remove`: Remove um dispositivo da lista de monitoramento.
-- `device-history`: Exibe o histórico de status (Online/Offline) de um dispositivo.
-- `logs-toggle`: Ativa/desativa logs em tempo real na tela.
-- `logs`: Exibe as últimas 20 linhas do log principal.
-- `config-show`: Exibe a configuração atual de host e porta do servidor.
-- `config-set`: Altera o host e a porta do servidor (requer reinicialização).
-- `clear`: Limpa a tela.
-- `help`: Lista todos os comandos.
-- `exit`: Encerra o programa.
+O CLI é ativado automaticamente ao iniciar o servidor. 
 
 ## 📊 Monitoramento e logs
 
@@ -159,14 +128,10 @@ Use `logs-toggle` no CLI para ver logs em tempo real ou `logs` para ver as últi
 
 ### WhatsApp não conecta
 
-- Se a autenticação falhar repetidamente, use o comando `wa-reset` no CLI. Ele limpará a sessão salva de forma segura.
-- Após o reset, use `wa-connect` para gerar um novo QR Code.
+- Se a autenticação falhar repetidamente, use o comando `wa-reset` no CLI. Ele limpará a sessão salva.
+- Após o reset, use `wa-connect` para conectar novamente.
 
 ### Interface web não carrega
 
 - Verifique se o servidor está rodando e em qual porta com o comando `config-show`.
 - Verifique os logs com o comando `logs` no CLI para ver se há erros na inicialização.
-
-## 📝 Licença
-
-Este projeto está licenciado sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
