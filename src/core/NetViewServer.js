@@ -12,6 +12,7 @@ const { WebSocketHandler } = require('../websocket/WebSocketHandler');
 const { TimerManager } = require('../utils/TimerManager');
 const { CliManager } = require('../cli/CliManager');
 const logger = require('../utils/Logger');
+process.title = 'NetView';
 class NetViewServer {
   constructor() {
     this.clients = new Set();
@@ -28,14 +29,13 @@ class NetViewServer {
     this.offlineNotifications = {};
     this.deviceOfflineHistory = {};
     this.NOTIFICATION_COOLDOWN = 30 * 60 * 1000;
-    this.MAX_CONSECUTIVE_OFFLINE_ALERTS = 3;
     this.serverStartTime = Date.now();
     this.INITIAL_SCAN_DELAY = 60 * 1000;
-    this.OFFLINE_THRESHOLD = 15 * 1000;
+    this.OFFLINE_THRESHOLD = null;
     this.notificationGroupId = null;
     this.configLastModified = 0;
     this.isReadyForNotifications = false;
-    this.host = '0.0.0.0'; this.port = 80; this.loadServerConfig();
+    this.loadServerConfig();
     this.configManager = new ConfigManager(this);
     this.pingService = new PingService(this);
     this.deviceStateManager = new DeviceStateManager(this);

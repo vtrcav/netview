@@ -9,23 +9,17 @@ class WhatsAppClient {
         this.whatsappClient = null;
         this.ready = false;
         this.connecting = false;
-        this.shouldAutoReconnect = true;
+        this.isClearingSession = false;
         this.events = new EventEmitter();
     }
     async initializeWhatsApp() {
-        if (this.whatsappClient) {
+        if (this.whatsappClient || this.connecting) {
             logger.warn('Tentativa de inicializar o WhatsApp, mas o cliente já existe ou está em processo.');
             return;
         }
         logger.info('Inicializando cliente WhatsApp...');
-        this.connecting = true;
-        this.events.emit('status_change', this.getConnectionStatus());
+        this.updateConnectionState('connecting');
         const authPath = path.join(__dirname, '../../.wwebjs_auth');
-        if (fs.existsSync(authPath)) {
-            logger.info(`Diretório de sessão WhatsApp encontrado: ${authPath}`);
-        } else {
-            logger.info(`Diretório de sessão WhatsApp NÃO encontrado. Uma nova sessão será criada.`);
-        }
         this.whatsappClient = new Client({
             authStrategy: new LocalAuth({ dataPath: authPath }),
             puppeteer: {
@@ -38,65 +32,96 @@ class WhatsAppClient {
             await this.whatsappClient.initialize();
         } catch (error) {
             logger.error(`Erro crítico na inicialização do WhatsApp: ${error.message}`);
-            this.connecting = false;
-            this.events.emit('status_change', this.getConnectionStatus());
+            this.clearSession('Erro na inicialização');
             throw error;
         }
     }
     setupWhatsAppClient() {
         if (!this.whatsappClient) return;
         this.whatsappClient.on('qr', (qr) => {
-            logger.info('QR Code recebido. Emitindo evento "qr" para o CLI.');
             this.events.emit('qr', qr);
         });
         this.whatsappClient.on('ready', async () => {
-            logger.info('Cliente WhatsApp está pronto!');
-            this.ready = true;
-            this.connecting = false;
-            this.shouldAutoReconnect = true;
-            this.events.emit('status_change', this.getConnectionStatus());
+            this.updateConnectionState('connected');
             this.loadGroupId();
             this.server.setReadyForNotifications(true);
             if (this.canSendNotifications()) {
                 await this.sendInitialStartupMessage();
-            } else {
-                logger.warn('Cliente pronto, mas nenhum grupo configurado para enviar a mensagem inicial.');
             }
-        });
-        this.whatsappClient.on('authenticated', () => {
-            logger.info('Cliente WhatsApp autenticado com sucesso.');
         });
         this.whatsappClient.on('auth_failure', (msg) => {
             logger.error(`Falha na autenticação do WhatsApp: ${msg}`);
-            this.connecting = false;
-            this.ready = false;
-            this.events.emit('status_change', this.getConnectionStatus());
+            this.clearSession('Falha na autenticação');
+        });
+        this.whatsappClient.on('error', (error) => {
+            logger.error(`Erro no cliente WhatsApp: ${error.message}.`);
+            this.clearSession('Erro na sessão');
         });
         this.whatsappClient.on('disconnected', (reason) => {
             logger.warn(`Cliente WhatsApp desconectado: ${reason}`);
-            this.ready = false;
-            this.connecting = false;
-            this.server.setReadyForNotifications(false);
-            this.events.emit('status_change', this.getConnectionStatus());
+            this.clearSession(`Desconectado: ${reason}`);
         });
+    }
+    updateConnectionState(newState, reason = null) {
+        const currentState = this.getConnectionStatus();
+        if (newState === currentState) return;
+        this.ready = newState === 'connected';
+        this.connecting = newState === 'connecting';
+        this.events.emit('status_change', { 
+            status: newState, 
+            reason: reason 
+        });
+    }
+    async clearSession(reason = 'Sessão encerrada') {
+        if (this.isClearingSession) return;
+        this.isClearingSession = true;
+        logger.info(`Iniciando limpeza da sessão. Motivo: ${reason}`);
+        try {
+            if (this.whatsappClient) {
+                await this.whatsappClient.destroy().catch(err => logger.error(`Erro ao destruir cliente na limpeza: ${err.message}`));
+                this.whatsappClient = null;
+            }
+            const projectRoot = path.resolve(__dirname, '../../');
+            const groupConfigPath = path.join(projectRoot, 'config', 'whatsapp_group.json');
+            const dirsToDelete = [
+                path.join(projectRoot, '.wwebjs_auth'),
+                path.join(projectRoot, '.wwebjs_cache')
+            ];
+            for (const dirPath of dirsToDelete) {
+                if (fs.existsSync(dirPath)) {
+                    await fs.promises.rm(dirPath, { recursive: true, force: true });
+                }
+            }
+            if (fs.existsSync(groupConfigPath)) {
+                await fs.promises.rm(groupConfigPath, { force: true });
+            }
+            if (this.server) {
+                this.server.notificationGroupId = null;
+            }
+            this.updateConnectionState('disconnected', reason);
+            logger.info('Limpeza da sessão e configuração de grupo concluída.');
+            return true;
+        } catch (error) {
+            logger.error(`Erro ao limpar a sessão do WhatsApp: ${error.message}`);
+            return false;
+        } finally {
+            this.isClearingSession = false;
+        }
     }
     async disconnectWhatsApp() {
         if (!this.whatsappClient) {
             logger.warn('Comando para desconectar, mas o WhatsApp já não está conectado.');
             return;
         }
-        logger.info('Desconectando WhatsApp...');
-        this.shouldAutoReconnect = false;
+        logger.info('Desconectando WhatsApp intencionalmente...');
+        this.whatsappClient.removeAllListeners();
         try {
             await this.whatsappClient.destroy();
-            logger.info('WhatsApp desconectado com sucesso.');
         } catch (error) {
             logger.error(`Erro ao desconectar WhatsApp: ${error.message}`);
         } finally {
             this.whatsappClient = null;
-            this.ready = false;
-            this.connecting = false;
-            this.events.emit('status_change', this.getConnectionStatus());
+            this.updateConnectionState('disconnected', 'Desconexão manual');
         }
     }
     getConnectionStatus() {

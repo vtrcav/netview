@@ -33,105 +33,100 @@ class CliManager {
         });
         const waEvents = this.server.whatsappClient.events;
         waEvents.on('qr', (qr) => {
-            this.printAsyncMessage(chalk.yellow('\n📱 Escaneie o QR Code abaixo com seu WhatsApp:'));
-            qrcode.generate(qr, { small: true }, (qrCodeString) => {
-                console.log(qrCodeString);
-                this.rl.prompt(true);
+            this.printAsyncMessage(chalk.yellow('📱 Escaneie o QR Code abaixo com seu WhatsApp: '));            qrcode.generate(qr, { small: true }, (qrCodeString) => {                console.log();                console.log(qrCodeString);                this.rl.prompt(true);            });        });
+        waEvents.on('status_change', (data) => {
+                this.showWhatsAppStatus(true, data);
             });
-        });
-        waEvents.on('status_change', () => {
-            this.showWhatsAppStatus(true);
-        });
-    }
+        }
     async start() {
-        this.showBanner();
-        this.showHelp();
-        this.rl.prompt();
-        this.rl.on('line', async (line) => {
-            const command = line.trim().toLowerCase();
-            if (command) {
-                await this.handleCommand(command);
-            }
-            if (command !== 'exit') {
-                this.rl.prompt();
-            }
-        }).on('close', () => {
-            console.log();
-            console.log(chalk.bold.yellow('\n'.padStart(51, '=')));
-            console.log(chalk.bold.yellow('👋 Encerrando NetView v3.1.0...'));
-            console.log(chalk.gray('   Até logo! 😊'));
-            console.log();
-            console.log();
-            process.exit(0);
-        });
-    }
+            this.showBanner();
+            this.showHelp();
+            this.rl.prompt();
+            this.rl.on('line', async (line) => {
+                const command = line.trim().toLowerCase();
+                if (command) {
+                    await this.handleCommand(command);
+                }
+                if (command !== 'exit') {
+                    this.rl.prompt();
+                }
+            }).on('close', () => {
+                console.log();
+                console.log(chalk.bold.yellow('\n'.padStart(51, '=')));
+                console.log(chalk.bold.yellow('👋 Encerrando NetView...'));
+                console.log(chalk.gray('   Até logo! 😊'));
+                console.log();
+                console.log();
+                process.exit(0);
+            });
+        }
     async handleCommand(command) {
-        switch (command) {
+            switch(command) {
             case 'wa-connect':
-                this.printAsyncMessage(chalk.yellow('🔄 Iniciando conexão com o WhatsApp...'));
-                await this.server.whatsappClient.initializeWhatsApp().catch(err => { });
-                break;
+            this.printAsyncMessage(chalk.yellow('🔄 Iniciando conexão com o WhatsApp...'));
+            await this.server.whatsappClient.initializeWhatsApp().catch(err => { });
+            break;
             case 'wa-disconnect':
-                await this.server.whatsappClient.disconnectWhatsApp();
-                break;
+            await this.server.whatsappClient.disconnectWhatsApp();
+            break;
             case 'wa-status':
-                await this.showWhatsAppStatus(false);
-                break;
+            await this.showWhatsAppStatus(false);
+            break;
             case 'wa-groups':
-                await this.listWhatsAppGroups();
-                break;
+            await this.listWhatsAppGroups();
+            break;
             case 'wa-set':
-                await this.selectGroup();
-                break;
+            await this.selectGroup();
+            break;
             case 'wa-test':
-                await this.testWhatsAppMessage();
-                break;
+            await this.testWhatsAppMessage();
+            break;
             case 'wa-debug':
-                console.log(chalk.blue('ℹ️  Ativando diagnóstico. As informações serão exibidas nos logs.'));
-                await this.server.whatsappClient.debugWhatsApp();
-                break;
+            console.log(chalk.blue('ℹ️  Ativando diagnóstico. As informações serão exibidas nos logs.'));
+            await this.server.whatsappClient.debugWhatsApp();
+            break;
             case 'wa-reset':
-                await this.resetWhatsAppConfig();
-                break;
+            await this.resetWhatsAppConfig();
+            break;
             case 'devices':
-                this.showDevices();
-                break;
+            this.showDevices();
+            break;
             case 'device-add':
-                await this.addDevice();
-                break;
+            await this.addDevice();
+            break;
             case 'device-edit':
-                await this.editDevice();
-                break;
+            await this.editDevice();
+            break;
             case 'device-history':
-                await this.showDeviceHistory();
-                break;
+            await this.showDeviceHistory();
+            break;
             case 'device-remove':
-                await this.removeDevice();
-                break;
+            await this.removeDevice();
+            break;
             case 'logs-toggle':
-                this.toggleConsoleLogs();
-                break;
+            this.toggleConsoleLogs();
+            break;
             case 'logs':
-                await this.showFileLogs();
-                break;
+            await this.showFileLogs();
+            break;
             case 'config-show':
-                await this.showServerConfig();
-                break;
+            await this.showServerConfig();
+            break;
             case 'config-set':
-                await this.setServerConfig();
-                break;
+            await this.setServerConfig();
+            break;
             case 'clear':
-                this.showBanner();
-                break;
+            this.showBanner();
+            break;
             case 'help':
-                this.showHelp();
-                break;
+            this.showHelp();
+            break;
             case 'about':
-                this.showAbout();
-                break;
+            this.showAbout();
+            break;
             case 'exit':
-                await this.exitProgram();
-                break;
+            await this.exitProgram();
+            break;
             default:
                 console.log(chalk.red(`❌ Comando não reconhecido: "${command}". Digite "help" para ajuda.`));
         }
@@ -139,7 +134,7 @@ class CliManager {
     showBanner() {
         console.clear();
         console.log(chalk.bold.cyan(''.padStart(50, '=')));
-        console.log('  ' + chalk.bold.cyan('🛰️ Bem-vindo ao NetView v3.1.0 - CLI'));
+        console.log('  ' + chalk.bold.cyan('🛰️ Bem-vindo ao NetView v3 - CLI'));
         console.log('  ' + chalk.gray('   Sistema de monitoramento de rede'));
         console.log(chalk.bold.cyan(''.padStart(50, '=')));
     }
@@ -187,7 +182,7 @@ class CliManager {
     }
     showAbout() {
         console.log('\n' + chalk.bold.cyan(''.padStart(50, '=')));
-        console.log('  ' + chalk.bold.cyan('🔍 SOBRE O NETVIEW') + chalk.bold.green(' v3.1.0'));
+        console.log('  ' + chalk.bold.cyan('🔍 SOBRE O NETVIEW') + chalk.bold.green(' v3.1.1'));
         console.log();
         console.log('  ' + chalk.gray('NetView é um sistema de monitoramento de rede que combina:'));
         console.log('  ' + chalk.gray('• Verificação de dispositivos em tempo real via ping'));
@@ -200,19 +195,25 @@ class CliManager {
         console.log();
         console.log(chalk.bold.cyan(''.padStart(50, '=')) + '\n');
     }
-    async showWhatsAppStatus(isAsync = false) {
-        const status = this.server.whatsappClient.getConnectionStatus();
+    async showWhatsAppStatus(isAsync = false, eventData = null) {
+        const status = eventData ? eventData.status : this.server.whatsappClient.getConnectionStatus();
+        const reason = eventData ? eventData.reason : null;
         const statusEmoji = this.getStatusEmoji(status);
         const statusText = this.getStatusText(status);
         const groupName = await this.getGroupName();
+        let reasonText = '';
+        if (reason) {
+            reasonText = `  ${chalk.white('Motivo:')}  ${chalk.yellow(reason)}`;
+        }
         const output = [
             `\n${chalk.bold.magenta(''.padStart(35, '='))}`,
             `${chalk.bold.magenta('  📱 STATUS DO WHATSAPP')}`,
             `${chalk.bold.magenta(''.padStart(35, '='))}`,
             `  ${chalk.white('Conexão:')} ${statusEmoji} ${statusText}`,
+            reasonText,
             `  ${chalk.white('Grupo:')}   ${groupName}`,
             `${chalk.bold.magenta(''.padStart(35, '='))}`
-        ].join('\n');
+        ].filter(Boolean).join('\n');
         if (isAsync) {
             this.printAsyncMessage(output);
         } else {
@@ -228,26 +229,12 @@ class CliManager {
                     this.rl.prompt();
                     return;
                 }
-                try {
-                    console.log(chalk.yellow(' Desconectando do WhatsApp...'));
-                    if (this.server.whatsappClient.getConnectionStatus() !== 'disconnected') {
-                        await this.server.whatsappClient.disconnectWhatsApp();
-                    }
-                    console.log(chalk.yellow('🧹 Iniciando limpeza...'));
-                    const projectRoot = path.resolve(__dirname, '../../');
-                    const dirsToDelete = ['.wwebjs_auth', '.wwebjs_cache'];
-                    for (const dir of dirsToDelete) {
-                        const dirPath = path.join(projectRoot, dir);
-                        if (fs.existsSync(dirPath)) {
-                            await fs.promises.rm(dirPath, { recursive: true, force: true });
-                            console.log(chalk.green(`✔️  Diretório ${dir} removido com sucesso.`));
-                        } else {
-                            console.log(chalk.gray(`- Diretório ${dir} não encontrado, pulando.`));
-                        }
-                    }
+                console.log(chalk.yellow('🧹 Iniciando limpeza...'));
+                const success = await this.server.whatsappClient.clearSession();
+                if (success) {
                     console.log(chalk.bold.green('\n✅ Limpeza concluída! Use "wa-connect" para iniciar uma nova sessão.'));
-                } catch (error) {
-                    console.log(chalk.red(`❌ Erro ao apagar a configuração: ${error.message}`));
+                } else {
+                    console.log(chalk.red('❌ Erro ao apagar a configuração. Verifique os logs para mais detalhes.'));
                 }
                 resolve();
                 this.rl.prompt();
@@ -310,7 +297,7 @@ class CliManager {
         }
         console.log(chalk.yellow('📤 Enviando mensagem de teste...'));
         const timestamp = new Date().toLocaleString('pt-BR');
-        const testMessage = `🧪 *Mensagem de Teste - NetView v3.1.0*\n\nSe você recebeu isto, está tudo funcionando!\nData/Hora: ${timestamp}\n\n_Enviado pelo NetView_`;
+        const testMessage = `🧪 *Mensagem de Teste - NetView v3*\n\nSe você recebeu isto, está tudo funcionando!\nData/Hora: ${timestamp}\n\n_Enviado pelo NetView_`;
         const success = await this.server.whatsappClient.sendMessage(testMessage);
         if (success) {
             console.log(chalk.green('✅ Mensagem de teste enviada com sucesso!'));

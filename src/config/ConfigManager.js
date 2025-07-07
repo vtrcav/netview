@@ -35,12 +35,36 @@ class ConfigManager {
             }
             if (currentMTime > this.server.configLastModified) {
                 logger.info("Detectada alteração no arquivo de configuração. Recarregando...");
+                const oldOfflineNotifications = { ...this.server.offlineNotifications };
+                const oldDeviceOfflineHistory = { ...this.server.deviceOfflineHistory };
+                const oldNotificationStates = {};
+                if (this.server.deviceStates) {
+                    for (const [category, devices] of Object.entries(this.server.deviceStates)) {
+                        for (const device of devices) {
+                            if (device.notificationSent) {
+                                oldNotificationStates[device.name] = device.notificationSent;
+                            }
+                        }
+                    }
+                }
                 this.server.deviceStates = {};
                 this.server.offlineNotifications = {};
                 this.server.deviceOfflineHistory = {};
-                this.server.pingTasks.clear(); 
+                this.server.pingTasks.clear();
                 this.server.configLastModified = currentMTime;
                 this.loadDeviceConfig();
+                const newOfflineNotifications = {};
+                const newDeviceOfflineHistory = {};
+                for (const deviceName in this.server.deviceConfig) {
+                    if (oldOfflineNotifications[deviceName]) {
+                        newOfflineNotifications[deviceName] = oldOfflineNotifications[deviceName];
+                    }
+                    if (oldDeviceOfflineHistory[deviceName]) {
+                        newDeviceOfflineHistory[deviceName] = oldDeviceOfflineHistory[deviceName];
+                    }
+                }
+                this.server.offlineNotifications = newOfflineNotifications;
+                this.server.deviceOfflineHistory = newDeviceOfflineHistory;
                 const notification = JSON.stringify({
                     type: 'config_updated',
                     timestamp: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }).replace(',', ''),
@@ -62,7 +86,7 @@ class ConfigManager {
                     stats: stats
                 });
                 for (const client of this.server.clients) {
-                    if (client.readyState === WebSocket.OPEN) {
+                    if (client.readyState === 1) {
                         client.send(notification);
                         client.send(statusUpdate);
                     }
