@@ -1,8 +1,8 @@
-# NetView - Sistema de Monitoramento de Rede
+# NetView - Sistema de monitoramento de rede
 
 ## 📋 Sobre
 
-NetView v3 é um sistema de monitoramento de rede robusto com arquitetura modular, interface web integrada e um poderoso CLI interativo. Monitora dispositivos via ping, envia notificações por WhatsApp e oferece um dashboard em tempo real.
+NetView é um sistema de monitoramento de rede robusto com arquitetura modular, interface web integrada e um poderoso CLI interativo. Monitora dispositivos via ping, envia notificações por WhatsApp e oferece um dashboard em tempo real.
 
 ## 🆕 Novidades da versão 3.1
 
@@ -49,11 +49,11 @@ NetView v3 é um sistema de monitoramento de rede robusto com arquitetura modula
 
 4. Na primeira inicialização, os arquivos `config/devices.json` e `config/server.json` serão criados automaticamente.
 
-5. **Configure os dispositivos via CLI**
+5. **Configure os dispositivos**
    - Após iniciar, use o comando `device-add` no terminal para adicionar seus dispositivos de forma interativa.
    - Repita o processo para todos os dispositivos que deseja monitorar.
 
-6. **Configure o WhatsApp via CLI**
+6. **Configure o WhatsApp**
    - Use `wa-connect` para escanear o QR Code.
    - Use `wa-groups` para listar seus grupos.
    - Use `wa-set` para definir o grupo de notificações.
@@ -69,11 +69,20 @@ Este arquivo armazena os dispositivos a serem monitorados. É recomendado gerenc
 {
   "nome-do-dispositivo": {
     "ip": "endereço-ip",
-    "description": "descrição-do-dispositivo",
     "category": "categoria-do-dispositivo",
+    "description": "descrição-opcional",
     "icon": "ícone-opcional",
-    "24h": true,
-    "workingHours": { /* ... */ }
+    "24h": true/false,
+    "workingHours": {
+      "weekday": {
+        "start": hora_inicio,
+        "end": hora_fim
+      },
+      "weekend": {
+        "start": hora_inicio,
+        "end": hora_fim
+      }
+    }
   }
 }
 ```
