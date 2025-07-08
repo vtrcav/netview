@@ -1,97 +1,116 @@
-# NetView - Sistema de monitoramento de rede
+# NetView - Monitoramento de rede
 
-## 📋 Sobre
-
-NetView é um sistema simples de monitoramento de rede via ping. Possui interface web, notificações via WhatsApp e comandos interativos no terminal (CLI).
+NetView é um sistema simples para monitorar dispositivos da rede via ping. Interface web limpa, alertas por WhatsApp, CLI interativo e suporte a modo background pra rodar com PM2 ou similares.
 
 ![Preview do NetView](https://i.imgur.com/BsXJeVb.png)
 
-## 🆕 Novidades da versão 3.1
+---
 
-- **Gerenciamento via CLI**: Adicione, edite e remova dispositivos
-- **Histórico de dispositivos**: Visualize o histórico de status de cada dispositivo
-- **Configuração de servidor via CLI**: Altere o host/porta do servidor
-- **Reset de sessão WhatsApp**: Limpar a sessão salva do WhatsApp pelo CLI
+## O que ele faz
 
-## 🛠️ Tecnologias utilizadas
+- **Monitoramento em tempo real**
+  - Verifica status (online/offline/fora de horário) dos dispositivos com base no ping.
+  - Suporte a horários de funcionamento por dispositivo.
 
-- **Node.js** - Express.js - servidor web
-- **WebSocket (ws)** - comunicação em tempo real
-- **whatsapp-web.js** - integração WhatsApp
-- **Puppeteer** - automação do navegador
-- **qrcode-terminal** - QR Code no terminal
-- **Chalk** - estilização do CLI
-- **Winston** - sistema de logs
+- **Interface web**
+  - Dashboard com filtros por status e categoria.
+  - Tempo de resposta e última verificação.
 
-## 📦 Instalação
+- **Notificações por WhatsApp**
+  - Alertas de mudança de status direto no grupo que você escolher.
+  - Conexão via QR Code, simples e rápido.
+
+- **CLI interativo**
+  - Adiciona e gerencia dispositivos.
+  - Edita as configurações do servidor.
+  - Conecta e gerencia o WhatsApp.
+  - Mostra histórico e logs em tempo real.
+
+- **Arquitetura modular**
+  - Backend com Express + WebSocket
+  - Frontend com Vue.js
+  - CLI embutido
+  - Sistema de logs estruturado
+
+---
+
+## Tecnologias principais
+
+- **Backend:** Node.js, Express, WebSocket  
+- **Frontend:** Vue.js  
+- **Notificações:** whatsapp-web.js, Puppeteer  
+- **CLI:** Chalk  
+- **Logs:** Winston  
+
+---
+
+## Instalação e uso
 
 ### Pré-requisitos
 
-- Node.js v20 ou superior
+- Node.js v20+
 - npm ou yarn
-- WhatsApp instalado no celular (para autenticação)
+- WhatsApp instalado no celular
 
-### Passos de instalação
+### 1. Clonar e instalar
 
-1. **Clone o repositório**
-   ```bash
-   git clone https://github.com/vtrcav/netview.git
-   cd netview
-   ```
+```bash
+git clone https://github.com/vtrcav/netview.git
+cd netview
+npm install
+```
 
-2. **Instale as dependências**
-   ```bash
-   npm install
-   ```
+### 2. Modos de execução
 
-3. **Inicie o servidor**
-   ```bash
-   npm start
-   ```
+#### Modo CLI (configuração e uso interativo)
 
-4. Na primeira inicialização, os arquivos `config/devices.json` e `config/server.json` serão criados automaticamente.
+```bash
+npm start
+# ou
+node server.js --cli
+```
 
-5. **Configure os dispositivos**
-   - Após iniciar, use o comando `device-add` no terminal para adicionar seus dispositivos de forma interativa.
-   - Repita o processo para todos os dispositivos que deseja monitorar.
+> Esse é o modo completo: ativa a interface web, inicia o monitoramento e abre o CLI com comandos interativos.
 
-6. **Configure o WhatsApp**
-   - Use `wa-connect` para escanear o QR Code.
-   - Use `wa-groups` para listar seus grupos.
-   - Use `wa-set` para definir o grupo de notificações.
-   - Use `wa-test` para enviar uma mensagem de teste.
+#### Modo background (uso com PM2 ou scripts)
 
-## ⚙️ Configuração
+```bash
+node server.js
+```
 
-### Arquivo config/devices.json
+> Esse modo roda em segundo plano e **não tem CLI**. Ideal pra deixar o serviço ativo 24/7.  
+Antes de usar esse modo, configure tudo antes pelo CLI:  
+adicione os dispositivos, conecte o WhatsApp e defina o grupo de alertas.
 
-Este arquivo armazena os dispositivos a serem monitorados. É recomendado gerenciá-lo através dos comandos `device-add`, `device-edit` e `device-remove`.
+---
+
+## Configuração
+
+### `config/devices.json`
+
+Arquivo com os dispositivos monitorados. Exemplo:
 
 ```json
-{
-  "nome-do-dispositivo": {
-    "ip": "endereço-ip",
-    "category": "categoria-do-dispositivo",
-    "description": "descrição-opcional",
-    "icon": "ícone-opcional",
-    "24h": true/false,
-    "workingHours": {
-      "weekday": {
-        "start": hora_inicio,
-        "end": hora_fim
-      },
-      "weekend": {
-        "start": hora_inicio,
-        "end": hora_fim
-      }
-    }
+"roteador-principal": {
+  "ip": "192.168.0.1",
+  "category": "infra",
+  "description": "Roteador da recepção",
+  "icon": "icone-opcional",
+  "24h": true,
+  "workingHours": {
+    "weekday": { "start": 8, "end": 18 },
+    "weekend": { "start": 0, "end": 0 }
   }
 }
 ```
 
-### Arquivo config/server.json
+Use `device-add`, `device-edit`, `device-remove` pra gerenciar.
 
-Controla as configurações do servidor web. Gerencie através dos comandos `config-show` e `config-set`.
+---
+
+### `config/server.json`
+
+Define porta e IP do servidor:
 
 ```json
 {
@@ -100,38 +119,56 @@ Controla as configurações do servidor web. Gerencie através dos comandos `con
 }
 ```
 
-- **host**: Endereço de IP para o bind do servidor. `0.0.0.0` permite acesso de outras máquinas na rede.
-- **port**: Porta em que o servidor web e WebSocket irão rodar.
+Use `config-show` e `config-set` no CLI pra editar sem abrir o arquivo.
 
-**Importante**: Alterações neste arquivo exigem uma reinicialização do servidor para terem efeito.
+> Mudanças nesse arquivo só valem após reiniciar o servidor.
 
-## 🚀 Uso
+---
+
+## Web + CLI
 
 ### Interface web
 
-Acesse a interface web usando o IP do seu servidor e a porta configurada (ex: `http://localhost:80/`):
+Depois de iniciar o servidor, acesse no navegador:
+```
+http://localhost:80/
+```
+Ou substitua `localhost` pelo IP da máquina na rede.
 
-### CLI
+### CLI (quando em modo `--cli`)
 
-O CLI é ativado automaticamente ao iniciar o servidor. 
+Alguns comandos úteis:
 
-## 📊 Monitoramento e logs
+```bash
+device-add            # Adiciona um dispositivo
+device-history        # Mostra o histórico
+config-show           # Exibe as configs atuais
+wa-connect            # Escaneia QR Code do WhatsApp
+wa-set                # Define grupo pra receber alertas
+logs                  # Mostra últimas linhas do log
+logs-toggle           # Liga/desliga log em tempo real
+```
 
-O sistema gera dois tipos de logs na pasta `logs/`:
+---
 
-- `netview.log`: Log geral de operações do servidor, erros e informações.
-- `history.jsonl`: Log estruturado contendo apenas as mudanças de status (Online/Offline) dos dispositivos, usado pelo comando `device-history`.
+## Logs e histórico
 
-Use `logs-toggle` no CLI para ver logs em tempo real ou `logs` para ver as últimas entradas do `netview.log`.
+- `logs/netview.log`: atividades gerais do sistema
+- `logs/history.jsonl`: histórico de status (usado pelo comando `device-history`)
 
-## 🐛 Solução de problemas
+---
 
-### WhatsApp não conecta
+## Solução de problemas
 
-- Se a autenticação falhar repetidamente, use o comando `wa-reset` no CLI. Ele limpará a sessão salva.
-- Após o reset, use `wa-connect` para conectar novamente.
+### WhatsApp não conecta?
 
-### Interface web não carrega
+```bash
+wa-reset   # limpa sessão salva
+wa-connect # escaneia novamente
+```
 
-- Verifique se o servidor está rodando e em qual porta com o comando `config-show`.
-- Verifique os logs com o comando `logs` no CLI para ver se há erros na inicialização.
+### Interface web não carrega?
+
+- Verifique se o servidor está rodando
+- Confirme host/porta com `config-show`
+- Veja logs com `logs` no CLI

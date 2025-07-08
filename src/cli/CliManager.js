@@ -7,19 +7,18 @@ const logger = require('../utils/Logger');
 class CliManager {
     constructor(server) {
         this.server = server;
-        this.rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-            prompt: chalk.bold.green('NetView > ')
-        });
+        this.rl = null; 
         this.consoleLogsEnabled = false;
-        this.registerEventListeners();
     }
     printAsyncMessage(message) {
-        readline.cursorTo(process.stdout, 0);
-        readline.clearLine(process.stdout, 0);
-        console.log(message);
-        this.rl.prompt(true);
+        if (this.rl) {
+            readline.cursorTo(process.stdout, 0);
+            readline.clearLine(process.stdout, 0);
+            console.log(message);
+            this.rl.prompt(true);
+        } else {
+            console.log(message);
+        }
     }
     registerEventListeners() {
         logger.on('log', (logString) => {
@@ -33,100 +32,117 @@ class CliManager {
         });
         const waEvents = this.server.whatsappClient.events;
         waEvents.on('qr', (qr) => {
-            this.printAsyncMessage(chalk.yellow('📱 Escaneie o QR Code abaixo com seu WhatsApp: '));            qrcode.generate(qr, { small: true }, (qrCodeString) => {                console.log();                console.log(qrCodeString);                this.rl.prompt(true);            });        });
+            this.printAsyncMessage(chalk.yellow('📱 Escaneie o QR Code abaixo com seu WhatsApp: '));
+            qrcode.generate(qr, { small: true }, (qrCodeString) => {
+                console.log();
+                console.log(qrCodeString);
+                if (this.rl) {
+                    this.rl.prompt(true);
+                }
+            });
+        });
         waEvents.on('status_change', (data) => {
-                this.showWhatsAppStatus(true, data);
-            });
-        }
+            this.showWhatsAppStatus(true, data);
+        });
+    }
     async start() {
-            this.showBanner();
-            this.showHelp();
-            this.rl.prompt();
-            this.rl.on('line', async (line) => {
-                const command = line.trim().toLowerCase();
-                if (command) {
-                    await this.handleCommand(command);
-                }
-                if (command !== 'exit') {
-                    this.rl.prompt();
-                }
-            }).on('close', () => {
-                console.log();
-                console.log(chalk.bold.yellow('\n'.padStart(51, '=')));
-                console.log(chalk.bold.yellow('👋 Encerrando NetView...'));
-                console.log(chalk.gray('   Até logo! 😊'));
-                console.log();
-                console.log();
-                process.exit(0);
-            });
-        }
+        this.rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            prompt: chalk.bold.green('NetView > ')
+        });
+
+        this.registerEventListeners();
+
+        this.showBanner();
+        this.showHelp();
+        this.rl.prompt();
+
+        this.rl.on('line', async (line) => {
+            const command = line.trim().toLowerCase();
+            if (command) {
+                await this.handleCommand(command);
+            }
+            if (command !== 'exit') {
+                this.rl.prompt();
+            }
+        }).on('close', () => {
+            console.log();
+            console.log(chalk.bold.yellow('\n'.padStart(51, '=')));
+            console.log(chalk.bold.yellow('👋 Encerrando NetView...'));
+            console.log(chalk.gray('   Até logo! 😊'));
+            console.log();
+            console.log();
+            process.exit(0);
+        });
+    }
     async handleCommand(command) {
-            switch(command) {
+        switch (command) {
             case 'wa-connect':
-            this.printAsyncMessage(chalk.yellow('🔄 Iniciando conexão com o WhatsApp...'));
-            await this.server.whatsappClient.initializeWhatsApp().catch(err => { });
-            break;
+                this.printAsyncMessage(chalk.yellow('🔄 Iniciando conexão com o WhatsApp...'));
+                await this.server.whatsappClient.initializeWhatsApp().catch(err => { });
+                break;
             case 'wa-disconnect':
-            await this.server.whatsappClient.disconnectWhatsApp();
-            break;
+                await this.server.whatsappClient.disconnectWhatsApp();
+                break;
             case 'wa-status':
-            await this.showWhatsAppStatus(false);
-            break;
+                await this.showWhatsAppStatus(false);
+                break;
             case 'wa-groups':
-            await this.listWhatsAppGroups();
-            break;
+                await this.listWhatsAppGroups();
+                break;
             case 'wa-set':
-            await this.selectGroup();
-            break;
+                await this.selectGroup();
+                break;
             case 'wa-test':
-            await this.testWhatsAppMessage();
-            break;
+                await this.testWhatsAppMessage();
+                break;
             case 'wa-debug':
-            console.log(chalk.blue('ℹ️  Ativando diagnóstico. As informações serão exibidas nos logs.'));
-            await this.server.whatsappClient.debugWhatsApp();
-            break;
+                console.log(chalk.blue('ℹ️  Ativando diagnóstico. As informações serão exibidas nos logs.'));
+                await this.server.whatsappClient.debugWhatsApp();
+                break;
             case 'wa-reset':
-            await this.resetWhatsAppConfig();
-            break;
+                await this.resetWhatsAppConfig();
+                break;
             case 'devices':
-            this.showDevices();
-            break;
+                this.showDevices();
+                break;
             case 'device-add':
-            await this.addDevice();
-            break;
+                await this.addDevice();
+                break;
             case 'device-edit':
-            await this.editDevice();
-            break;
+                await this.editDevice();
+                break;
             case 'device-history':
-            await this.showDeviceHistory();
-            break;
+                await this.showDeviceHistory();
+                break;
             case 'device-remove':
-            await this.removeDevice();
-            break;
+                await this.removeDevice();
+                break;
             case 'logs-toggle':
-            this.toggleConsoleLogs();
-            break;
+                this.toggleConsoleLogs();
+                break;
             case 'logs':
-            await this.showFileLogs();
-            break;
+                await this.showFileLogs();
+                break;
             case 'config-show':
-            await this.showServerConfig();
-            break;
+                await this.showServerConfig();
+                break;
             case 'config-set':
-            await this.setServerConfig();
-            break;
+                await this.setServerConfig();
+                break;
             case 'clear':
-            this.showBanner();
-            break;
+                this.showBanner();
+                break;
             case 'help':
-            this.showHelp();
-            break;
+                this.showHelp();
+                break;
             case 'about':
-            this.showAbout();
-            break;
+                this.showAbout();
+                break;
             case 'exit':
-            await this.exitProgram();
-            break;
+                await this.exitProgram();
+                break;
             default:
                 console.log(chalk.red(`❌ Comando não reconhecido: "${command}". Digite "help" para ajuda.`));
         }
@@ -182,7 +198,7 @@ class CliManager {
     }
     showAbout() {
         console.log('\n' + chalk.bold.cyan(''.padStart(50, '=')));
-        console.log('  ' + chalk.bold.cyan('🔍 SOBRE O NETVIEW') + chalk.bold.green(' v3.1.1'));
+        console.log('  ' + chalk.bold.cyan('🔍 SOBRE O NETVIEW') + chalk.bold.green(' v3.2.0'));
         console.log();
         console.log('  ' + chalk.gray('NetView é um sistema de monitoramento de rede que combina:'));
         console.log('  ' + chalk.gray('• Verificação de dispositivos em tempo real via ping'));

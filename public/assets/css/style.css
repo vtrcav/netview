@@ -620,7 +620,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* Alerta e spinner */
 .alert {
   margin: 16px;
   border-radius: 8px;

@@ -8,10 +8,10 @@
     "ws": "^8.18.1"
   },
   "name": "netview",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js --cli"
   },
   "keywords": [],
   "author": "",

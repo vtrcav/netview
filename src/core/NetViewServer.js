@@ -44,41 +44,75 @@ class NetViewServer {
     this.webSocketHandler = new WebSocketHandler(this);
     this.timerManager = new TimerManager(this);
     this.cliManager = new CliManager(this);
-    logger.info(`Caminho do arquivo de configuração: ${this.configFile}`);
-    logger.info(`configLastModified inicializado como: ${this.configLastModified}`);
+    logger.info(`Caminho do arquivo de configuração de dispositivos: ${this.configFile}`);
   }
   loadServerConfig() {
     const configPath = path.join(__dirname, '../../config/server.json');
     try {
       if (fs.existsSync(configPath)) {
-        const rawConfig = fs.readFileSync(configPath);
+        const rawConfig = fs.readFileSync(configPath, 'utf8');
         const serverConfig = JSON.parse(rawConfig);
-        this.host = serverConfig.host || this.host;
-        this.port = serverConfig.port || this.port;
-        logger.info(`Configuração do servidor carregada de server.json: ${this.host}:${this.port}`);
+        this.host = serverConfig.host || '0.0.0.0';
+        this.port = serverConfig.port || 80;
+        logger.info(`Configuração do servidor carregada: ${this.host}:${this.port}`);
       } else {
+        this.host = '0.0.0.0';
+        this.port = 80;
         const defaultConfig = JSON.stringify({ host: this.host, port: this.port }, null, 2);
-        fs.writeFileSync(configPath, defaultConfig);
-        logger.warn('Arquivo config/server.json não encontrado. Criado com valores padrão.');
+        fs.writeFileSync(configPath, defaultConfig, 'utf8');
+        logger.warn(`Arquivo config/server.json não encontrado. Criado com valores padrão (${this.host}:${this.port}).`);
       }
     } catch (error) {
       logger.error(`Erro ao carregar config/server.json. Usando valores padrão. Erro: ${error.message}`);
+      this.host = '0.0.0.0';
+      this.port = 80;
     }
   }
-  async startServices() {
+  async start(options = {}) {
+    const isCliMode = options.cli || false;
+    const app = express();
+    app.use(express.static(path.join(__dirname, '../../public')));
+    app.get('/assets/js/config.js', (req, res) => {
+        const wsHost = req.hostname;
+        const wsPort = this.port;
+        res.set('Content-Type', 'application/javascript');
+        res.send(`window.NETVIEW_CONFIG = { wsHost: '${wsHost}', wsPort: ${wsPort} };`);
+    });
+    const server = http.createServer(app);
+    const wss = new WebSocket.Server({ server });
+    wss.on('connection', (ws, req) => {
+        this.webSocketHandler.handleConnection(ws, req);
+    });
+    server.listen(this.port, this.host, async () => {
+        const displayHost = this.host === '0.0.0.0' ? 'localhost' : this.host;
+        logger.info(`Servidor NetView iniciado em ${this.host}:${this.port}`);
+        logger.info(`Interface web disponível em: http://${displayHost}:${this.port}/`);
+
+        await this.startBackgroundServices();
+
+        if (isCliMode) {
+            logger.info('Iniciando em modo CLI...');
+            await this.cliManager.start();
+        } else {
+            logger.info('Iniciando em modo Servidor (background). A CLI interativa não será iniciada.');
+            logger.info('Para gerenciamento, execute: node server.js --cli');
+        }
+    });
+  }
+  async startBackgroundServices() {
+    logger.info('Iniciando serviços de background do NetView...');
     this.whatsappClient.loadGroupId();
     this.configManager.loadDeviceConfig();
     this.pingService.checkAllDevices();
     this.timerManager.setupTimers();
-    await this.cliManager.start();
-    logger.info('Servidor NetView inicializado');
+    logger.info('Serviços de background iniciados.');
     if (this.notificationGroupId) {
       logger.info('Grupo WhatsApp configurado. Tentando conectar automaticamente...');
       this.whatsappClient.initializeWhatsApp().catch(error => {
         logger.error(`Erro ao iniciar WhatsApp automaticamente: ${error.message}`);
       });
     } else {
-      logger.info('Nenhum grupo WhatsApp configurado. Use o CLI para conectar e configurar um grupo.');
+      logger.info('Nenhum grupo WhatsApp configurado. Use o modo CLI para conectar e configurar um grupo.');
     }
   }
   isWhatsAppAvailable() {
@@ -96,27 +130,4 @@ class NetViewServer {
     logger.info(`Pronto para notificações: ${isReady}`);
   }
 }
-const port = process.argv[2] ? parseInt(process.argv[2]) : 80;
-const host = process.argv[3] || '0.0.0.0';
-const netViewServer = new NetViewServer();
-const app = express();
-app.use(express.static('public'));
-app.get('/assets/js/config.js', (req, res) => {
-  const wsHost = req.hostname;
-  const wsPort = netViewServer.port;
-
-  res.set('Content-Type', 'application/javascript');
-  res.send(`window.NETVIEW_CONFIG = { wsHost: '${wsHost}', wsPort: ${wsPort} };`);
-});
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-wss.on('connection', (ws, req) => {
-  netViewServer.webSocketHandler.handleConnection(ws, req);
-});
-server.listen(netViewServer.port, netViewServer.host, () => {
-  const displayHost = netViewServer.host === '0.0.0.0' ? 'localhost' : netViewServer.host;
-  logger.info(`Servidor NetView iniciado em ${netViewServer.host}:${netViewServer.port}`);
-  logger.info(`Interface web disponível em: http://${displayHost}:${netViewServer.port}/`);
-  netViewServer.startServices();
-});
 module.exports = { NetViewServer };
