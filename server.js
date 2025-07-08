@@ -1,7 +1,7 @@
 /**
  * NetView v3.2.0
  * 
- * Vitor Cavalcante (vtrcav) - 2025
+ * 2023-2025 - Vitor Cavalcante (vtrcav)
  * Repositório: https://github.com/vtrcav/netview
  * 
  * Este é o ponto de entrada. Abaixo estão os dois modos de uso:
