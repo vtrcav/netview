@@ -1,3 +1,31 @@
+/**
+ * NetView v3.2.0
+ *
+ * 2023–2025 — Vitor Cavalcante (vtrcav)
+ * Repositório: https://github.com/vtrcav/netview
+ * 
+ * O PingService.js é módulo responsável por verificar os dispositivos usando ICMP (ping).
+ *
+ * Parâmetros principais:
+ *
+ * ┌────────────────────┬─────────────┬────────────────────────────────────────────────────────┐
+ * │ Nome               │ Unidade     │ Descrição                                              │
+ * ├────────────────────┼─────────────┼────────────────────────────────────────────────────────┤
+ * │ packets            │ número      │ Quantidade de pacotes enviados por tentativa           │
+ * │ timeout            │ milisseg.   │ Tempo máximo de espera por resposta (por tentativa)    │
+ * │ retries            │ número      │ Número de tentativas extras após falha                 │
+ * │ backoffFactor      │ número      │ Fator de multiplicação do timeout a cada nova tentativa│
+ * │ size               │ bytes       │ Tamanho do pacote (auto-ajustado por arquitetura)      │
+ * └────────────────────┴─────────────┴────────────────────────────────────────────────────────┘
+ *
+ * Valores padrão:
+ * - packets: 3
+ * - timeout: 1000ms
+ * - retries: 3
+ * - backoffFactor: 1.5
+ * - size: 68 bytes (x64) / 56 bytes (x86)
+ *
+ */
 const os = require('os');
 const util = require('util');
 const { exec } = require('child_process');
@@ -6,6 +34,15 @@ const logger = require('../utils/Logger');
 class PingService {
     constructor(server) {
         this.server = server;
+        this.config = {
+            packets: 3,
+            timeout: 1000,
+            retries: 3,
+            backoffFactor: 1.5,
+            size: os.arch() === 'x64' ? 68 : 56
+        };
+        logger.info(`PingService iniciado - Platform: ${os.platform()}, Arch: ${os.arch()}`);
+        logger.info('Configuração de Ping:', this.config);
     }
     async checkAllDevices() {
         const checkPromises = Object.entries(this.server.deviceConfig).map(
@@ -24,10 +61,8 @@ class PingService {
         }
     }
     async checkDevice(name, deviceInfo, isPriority = false) {
-        if (this.server.pingTasks.has(name)) {
-            if (!isPriority) {
-                return;
-            }
+        if (this.server.pingTasks.has(name) && !isPriority) {
+            return;
         }
         const checkPromise = this._checkDeviceInternal(name, deviceInfo);
         this.server.pingTasks.set(name, checkPromise);
@@ -66,95 +101,109 @@ class PingService {
                 isWorkingHours = (currentHour >= start && currentHour < end);
             }
         }
-        if (!isWorkingHours && !(deviceInfo['24h'])) {
+        if (!isWorkingHours && !deviceInfo['24h']) {
             result.status = 'Fora de horário';
             result.responseTime = null;
             this.server.deviceStateManager.updateDeviceState(name, result);
             return;
         }
         try {
-            const pingResult = await this.pingWithRetry(deviceInfo.ip, this.server.retryCount);
+            const pingResult = await this.pingWithAdvancedRetry(deviceInfo.ip);
             result.status = pingResult.success ? 'Online' : 'Offline';
-            result.responseTime = pingResult.responseTime;
+            result.responseTime = pingResult.avgResponseTime;
+            result.packetLoss = pingResult.packetLoss;
         } catch (error) {
-            logger.error(`Erro durante ping para ${name}: ${error.message}`);
+            logger.error(`Erro crítico durante ping para ${name}: ${error.message}`);
             result.status = 'Offline';
             result.responseTime = null;
+            result.packetLoss = 100;
         }
         this.server.deviceStateManager.updateDeviceState(name, result);
     }
-    async pingWithRetry(ip, retryCount = 2) {
-        let successCount = 0;
-        let lastResponseTime = null;
-        for (let attempt = 0; attempt < retryCount; attempt++) {
+    async pingWithAdvancedRetry(ip) {
+        let currentTimeout = this.config.timeout;
+        for (let attempt = 0; attempt <= this.config.retries; attempt++) {
             try {
-                const result = await this.executePing(ip);
+                const result = await this.executePingWithStats(ip, currentTimeout);
                 if (result.success) {
-                    successCount++;
-                    lastResponseTime = result.responseTime;
+                    logger.info(`✅ Ping para ${ip} bem-sucedido na tentativa ${attempt + 1}.`);
+                    return result;
                 }
+                logger.warn(`⚠️ Tentativa ${attempt + 1} para ${ip} falhou. ${result.received}/${result.sent} pacotes.`);
             } catch (error) {
-                logger.error(`Erro no ping para ${ip} (tentativa ${attempt + 1}): ${error.message}`);
+                logger.error(`❌ Erro na tentativa ${attempt + 1} para ${ip}: ${error.message}`);
             }
+            currentTimeout = Math.round(currentTimeout * this.config.backoffFactor);
         }
-        return {
-            success: successCount > (retryCount / 2),
-            responseTime: lastResponseTime
-        };
+        logger.error(`🚨 Todas as ${this.config.retries + 1} tentativas para ${ip} falharam.`);
+        return { success: false, avgResponseTime: null, packetLoss: 100, sent: this.config.packets, received: 0 };
     }
-    async executePing(ip) {
+    async executePingWithStats(ip, timeout) {
+        const { packets, size } = this.config;
         const escapedIP = ip.replace(/"/g, '\\"');
-        const count = 1;
-        const timeout = 2000;
-        let command, pattern;
+        let command;
         if (os.platform() === 'win32') {
-            command = `ping -n ${count} -w ${timeout} ${escapedIP}`;
-            pattern = /(?:Average|Média) = ([0-9.]+)ms/i;
+            command = `ping -n ${packets} -w ${timeout} -l ${size} ${escapedIP}`;
         } else {
-            const timeoutSecs = timeout / 1000;
-            command = `ping -c ${count} -W ${timeoutSecs} ${escapedIP}`;
-            pattern = /(?:min\/avg\/max\/(?:stddev|mdev)|rtt min\/avg\/max\/mdev) = ([0-9.]+)\/([0-9.]+)\/([0-9.]+)\/([0-9.]+)/;
+            const timeoutSecs = Math.max(1, Math.round(timeout / 1000));
+            command = `ping -c ${packets} -W ${timeoutSecs} -s ${size} ${escapedIP}`;
         }
         try {
-            const { stdout } = await execPromise(command);
-            let responseTime = null;
-            if (os.platform() === 'win32') {
-                const matches = stdout.match(pattern);
-                if (matches && matches[1]) {
-                    responseTime = parseFloat(matches[1]);
-                } else {
-                    const timePattern = /tempo=([0-9.]+)ms/i;
-                    const altMatches = stdout.match(timePattern);
-                    if (altMatches && altMatches[1]) {
-                        responseTime = parseFloat(altMatches[1]);
-                    } else {
-                        responseTime = 1;
-                    }
+            const { stdout } = await execPromise(command, { timeout: timeout + 2000 });
+            return this.parsePingResult(stdout);
+        } catch (error) {
+            const outputOnError = error.stdout || error.stderr || '';
+            logger.warn(`Comando ping para ${ip} falhou. Analisando saída de erro.`);
+            return this.parsePingResult(outputOnError);
+        }
+    }
+    parsePingResult(stdout) {
+        let sent = 0;
+        let received = 0;
+        let avgResponseTime = null;
+        let responseTimes = []; 
+        sent = this.config.packets;
+        if (os.platform() === 'win32') {
+            const packetsMatch = stdout.match(/(?:Packets|Pacotes): (?:Sent|Enviados) = (\d+), (?:Received|Recebidos) = (\d+), (?:Lost|Perdidos) = (\d+)/);
+            if (packetsMatch) {
+                sent = parseInt(packetsMatch[1], 10);
+                received = parseInt(packetsMatch[2], 10);
+            }
+            const avgMatch = stdout.match(/(?:Average|Média) = (\d+)ms/);
+            if (avgMatch) {
+                avgResponseTime = parseInt(avgMatch[1], 10);
+            } else if (received > 0) {
+                const replyMatches = stdout.matchAll(/(?:Resposta de|Reply from) .* tempo(?:<|=)(\d+)ms/gi);
+                for (const match of replyMatches) {
+                    responseTimes.push(parseInt(match[1], 10));
                 }
-            } else {
-                const matches = stdout.match(pattern);
-                if (matches && matches[2]) {
-                    responseTime = parseFloat(matches[2]);
-                } else {
-                    const timePattern = /time=([0-9.]+) ms/i;
-                    const altMatches = stdout.match(timePattern);
-                    if (altMatches && altMatches[1]) {
-                        responseTime = parseFloat(altMatches[1]);
-                    } else {
-                        responseTime = 1;
-                    }
+
+                if (responseTimes.length > 0) {
+                    const sum = responseTimes.reduce((a, b) => a + b, 0);
+                    avgResponseTime = sum / responseTimes.length;
                 }
             }
-            return {
-                success: true,
-                responseTime: responseTime
-            };
-        } catch (error) {
-            return {
-                success: false,
-                responseTime: null
-            };
+
+        } else {
+            const packetsMatch = stdout.match(/(\d+) (?:packets transmitted|pacotes transmitidos), (\d+) (?:received|recebidos)/);
+            if (packetsMatch) {
+                sent = parseInt(packetsMatch[1], 10);
+                received = parseInt(packetsMatch[2], 10);
+            }
+            const rttMatch = stdout.match(/rtt min\/(?:avg|méd)\/max\/mdev = [\d.]+\/([\d.]+)\//);
+            if (rttMatch) {
+                avgResponseTime = parseFloat(rttMatch[1]);
+            }
         }
+        const packetLoss = (sent > 0) ? ((sent - received) / sent) * 100 : 100;
+        const success = received > 0;
+        return {
+            success,
+            avgResponseTime: avgResponseTime ? Math.round(avgResponseTime) : null,
+            packetLoss: Math.round(packetLoss),
+            sent,
+            received
+        };
     }
 }
 module.exports = { PingService };
