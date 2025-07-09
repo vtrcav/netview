@@ -4,7 +4,7 @@
  * 2023–2025 — Vitor Cavalcante (vtrcav)
  * Repositório: https://github.com/vtrcav/netview
  * 
- * O PingService.js é módulo responsável por verificar os dispositivos usando ICMP (ping).
+ * PingService.js: módulo responsável por verificar os dispositivos usando ICMP (ping).
  *
  * Parâmetros principais:
  *
