@@ -50,7 +50,7 @@ class NotificationManager {
         if (!deviceNotification.notificationSent && offlineHistory.isCurrentlyOffline) {
             logger.info(`[Notificação Offline] TENTANDO ENVIAR notificação para ${deviceKey}.`);
             try {
-                const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                const timestamp = new Date(offlineHistory.firstOfflineTime).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
                 const message = `⚠️ *DISPOSITIVO OFFLINE* ⚠️\n\n` +
                               `*Nome:* ${device.name}\n` +
                               `*IP:* ${device.ip}\n` +
