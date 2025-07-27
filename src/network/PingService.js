@@ -3,7 +3,7 @@
  *
  * 2023–2025 — Vitor Cavalcante (vtrcav)
  * Repositório: https://github.com/vtrcav/netview
- * 
+ *
  * PingService.js: módulo responsável por verificar os dispositivos usando ICMP (ping).
  *
  * Parâmetros principais:
@@ -85,7 +85,7 @@ class PingService {
             timestamp: timestamp
         };
         const currentHour = new Date().getHours();
-        const isWeekday = [1, 2, 3, 4, 5].includes(new Date().getDay() === 0 ? 7 : new Date().getDay());
+        const isWeekday = [1, 2, 3, 4, 5].includes(new Date().getDay());
         let isWorkingHours = true;
         if (deviceInfo.workingHours) {
             const workingHours = deviceInfo.workingHours;
@@ -96,9 +96,11 @@ class PingService {
                 isWorkingHours = (currentHour >= start && currentHour < end);
             }
             if (!isWorkingHours && workingHours.weekend && !isWeekday) {
-                const start = workingHours.weekend.start || 9;
-                const end = workingHours.weekend.end || 16;
-                isWorkingHours = (currentHour >= start && currentHour < end);
+                const start = workingHours.weekend.start;
+                const end = workingHours.weekend.end;
+                if (start !== null && end !== null) {
+                    isWorkingHours = (currentHour >= start && currentHour < end);
+                }
             }
         }
         if (!isWorkingHours && !deviceInfo['24h']) {
@@ -161,7 +163,7 @@ class PingService {
         let sent = 0;
         let received = 0;
         let avgResponseTime = null;
-        let responseTimes = []; 
+        let responseTimes = [];
         sent = this.config.packets;
         if (os.platform() === 'win32') {
             const packetsMatch = stdout.match(/(?:Packets|Pacotes): (?:Sent|Enviados) = (\d+), (?:Received|Recebidos) = (\d+), (?:Lost|Perdidos) = (\d+)/);
