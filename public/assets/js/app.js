@@ -15,7 +15,7 @@ const app = new Vue({
     websocket: null,
     reconnectAttempts: 0,
     maxReconnectAttempts: 5,
-    reconnectDelay: 3000,
+    reconnectDelay: 60000,
     loading: true,
     error: null,
     showModal: false,
@@ -143,7 +143,6 @@ const app = new Vue({
       try {
         const messages = event.data.split('\n').map(msg => JSON.parse(msg));
         messages.forEach(data => {
-          console.log('Mensagem recebida:', data);
           switch (data.type) {
             case 'status_update':
               this.processInitialState(data.groups);
@@ -257,6 +256,24 @@ const app = new Vue({
     },
     formatResponseTime(time) {
       return time === null ? 'N/A' : time.toFixed(1) + ' ms';
+    },
+    formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+
+      const parts = timestamp.split(/[\s,]+/);
+      const dateParts = parts[0].split('/');
+      const timeParts = parts[1].split(':');
+
+      const isoTimestamp = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timeParts[0]}:${timeParts[1]}:${timeParts[2]}`;
+
+      return new Date(isoTimestamp).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     },
     openConfig() {
       this.showConfigModal = true;

@@ -13,26 +13,26 @@ class DeviceStateManager {
         const previousState = this.getDevicePreviousState(name, category);
         let updated = false;
         let statusChanged = false;
+        let responseTimeChanged = false;
+
         this.server.deviceStates[category] = this.server.deviceStates[category].map(device => {
             if (device.name === name) {
                 updated = true;
                 statusChanged = device.status !== result.status;
+                responseTimeChanged = device.responseTime !== result.responseTime;
                 return result;
             }
             return device;
         });
+
         if (!updated) {
             this.server.deviceStates[category].push(result);
             statusChanged = true;
+            responseTimeChanged = true;
         }
-        logger.info(`Status do dispositivo ${name}: ${result.status} (mudou: ${statusChanged})`);
-        if (result.status === 'Offline') {
-            this.server.notificationManager.sendOfflineNotification(result);
-        } else if (result.status === 'Online' && statusChanged) {
-            this.server.notificationManager.sendOnlineNotification(result);
-        }
-        if (statusChanged) {
-            await logStatusChange(result.name, result.status);
+
+        if (statusChanged || responseTimeChanged) {
+            logger.info(`Status do dispositivo ${name}: ${result.status} (mudou: ${statusChanged}, ms: ${responseTimeChanged})`);
             const update = JSON.stringify({
                 type: 'device_update',
                 device: result,
@@ -43,6 +43,17 @@ class DeviceStateManager {
                     client.send(update);
                 }
             }
+        }
+
+        if (result.status === 'Offline') {
+            this.server.notificationManager.sendOfflineNotification(result);
+        } else if (result.status === 'Online' && statusChanged) {
+            this.server.notificationManager.sendOnlineNotification(result);
+        }
+
+        if (statusChanged) {
+            await logStatusChange(result.name, result.status);
+            
             if (previousState) {
                 const stateChange = JSON.stringify({
                     type: 'state_change',

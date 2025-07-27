@@ -110,7 +110,7 @@
                 <i class="fas fa-tachometer-alt"></i> {{ formatResponseTime(device.responseTime) }}
               </p>
               <p class="device-timestamp" v-if="config.showTimestamp && device.timestamp">
-                <i class="fas fa-history"></i> {{ new Date(device.timestamp).toLocaleTimeString() }}
+                <i class="fas fa-history"></i> {{ formatTimestamp(device.timestamp) }}
               </p>
             </div>
           </div>
