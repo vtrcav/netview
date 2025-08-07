@@ -31,7 +31,7 @@ class NetViewServer {
     this.NOTIFICATION_COOLDOWN = 30 * 60 * 1000;
     this.serverStartTime = Date.now();
     this.INITIAL_SCAN_DELAY = 60 * 1000;
-    this.OFFLINE_THRESHOLD = null;
+    this.OFFLINE_THRESHOLD = 60000;
     this.notificationGroupId = null;
     this.configLastModified = 0;
     this.isReadyForNotifications = false;
@@ -74,9 +74,10 @@ class NetViewServer {
     app.use(express.static(path.join(__dirname, '../../public')));
     app.get('/assets/js/config.js', (req, res) => {
         const wsHost = req.hostname;
-        const wsPort = this.port;
+        const wsProtocol = req.headers['x-forwarded-proto'] === 'https' || req.protocol === 'https' ? 'wss' : 'ws';
+        const wsPort = req.headers['x-forwarded-port'] || (wsProtocol === 'wss' ? 443 : this.port);
         res.set('Content-Type', 'application/javascript');
-        res.send(`window.NETVIEW_CONFIG = { wsHost: '${wsHost}', wsPort: ${wsPort} };`);
+        res.send(`window.NETVIEW_CONFIG = { wsHost: '${wsHost}', wsPort: ${wsPort}, wsProtocol: '${wsProtocol}' };`);
     });
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ server });

@@ -113,16 +113,18 @@ const app = new Vue({
       if (this.websocket) {
         this.websocket.close();
       }
-            let wsHost, wsPort;
+            let wsHost, wsPort, wsProtocol;
             if (window.NETVIEW_CONFIG) {
                 wsHost = window.NETVIEW_CONFIG.wsHost;
-        wsPort = window.NETVIEW_CONFIG.wsPort;
-      } else {
+                wsPort = window.NETVIEW_CONFIG.wsPort;
+                wsProtocol = window.NETVIEW_CONFIG.wsProtocol;
+            } else {
                 console.error("Configuração do servidor (NETVIEW_CONFIG) não encontrada. Usando valores padrão.");
-        wsHost = window.location.hostname || 'localhost';
-        wsPort = 80;       }
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${wsHost}:${wsPort}`;
+                wsHost = window.location.hostname || 'localhost';
+                wsPort = 80;
+                wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            }
+            const wsUrl = `${wsProtocol}://${wsHost}:${wsPort}`;
       console.log('Conectando ao WebSocket:', wsUrl);
       this.connectionStatus = 'Conectando...';
       this.websocket = new WebSocket(wsUrl);
